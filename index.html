@@ -1,1 +1,1037 @@
-server.pigosso.com
+<!DOCTYPE html><html><head>
+<base href="http://www.kevs3d.co.uk/dev/shaders/waves2.html#">
+<!--
+   Ray Marching demo by Kevin Roast
+   
+   - Lots of code/ideas for this demo come from reading:
+     http://www.iquilezles.org/www/material/nvscene2008/rwwtt.pdf
+     http://www.pouet.net/topic.php?which=7931&page=1
+     http://www.pouet.net/topic.php?which=7920&page=1
+     http://iquilezles.org/www/articles/distfunctions/distfunctions.htm
+     https://www.shadertoy.com/
+   
+   If you want to understand this stuff read through the PDF and pouet.net links above!
+-->
+      <script data-savepage-src="scripts/utils.js" src="data:application/javascript;charset=utf-8,window.addEventListener('load'%2C%20function()%20%7B%0A%20%20%20document.getElementById(%22fullscreen%22).addEventListener(%22click%22%2C%20OnFullScreen%2C%20false)%3B%0A%7D%2C%20false)%3B%0A%0Adocument.addEventListener(%22fullscreenchange%22%2C%20ToggleFullScreen)%3B%0Adocument.addEventListener(%22webkitfullscreenchange%22%2C%20ToggleFullScreen)%3B%0A%0Avar%20_canvas%20%3D%20%7B%7D%3B%0Afunction%20OnFullScreen()%20%7B%0A%20%20%20var%20c%20%3D%20document.getElementsByTagName(%22canvas%22)%5B0%5D%3B%0A%20%20%20(c.requestFullscreen%20%7C%7C%20c.webkitRequestFullScreen%20%7C%7C%20c.mozRequestFullScreen).call(c)%3B%0A%7D%0A%0Afunction%20ToggleFullScreen(event)%20%7B%0A%20%20%20console.log(document.webkitIsFullScreen%20%7C%7C%20document.mozFullScreen%20%7C%7C%20document.msFullscreenElement)%3B%0A%20%20%20var%20c%20%3D%20document.getElementsByTagName(%22canvas%22)%5B0%5D%3B%0A%20%20%20if%20(!(document.webkitIsFullScreen%20%7C%7C%20document.mozFullScreen%20%7C%7C%20document.msFullscreenElement))%20%7B%0A%20%20%20%20%20%20c.width%20%3D%20_canvas.width%3B%0A%20%20%20%20%20%20c.height%20%3D%20_canvas.height%3B%0A%20%20%20%20%20%20gl.viewport(0%2C%200%2C%20c.width%2C%20c.height)%3B%0A%20%20%20%7D%0A%20%20%20else%20%7B%0A%20%20%20%20%20%20_canvas.width%20%3D%20c.width%3B%0A%20%20%20%20%20%20_canvas.height%20%3D%20c.height%3B%0A%20%20%20%20%20%20c.width%20%3D%20window.screen.width%3B%0A%20%20%20%20%20%20c.height%20%3D%20window.screen.height%3B%0A%20%20%20%20%20%20gl.viewport(0%2C%200%2C%20c.width%2C%20c.height)%3B%0A%20%20%20%20%20%20(c.requestFullscreen%20%7C%7C%20c.webkitRequestFullScreen%20%7C%7C%20c.mozRequestFullScreen).call(c)%3B%0A%20%20%20%7D%0A%7D"></script>
+      <script data-savepage-src="scripts/dat.gui.min.js" src="data:application/javascript;charset=utf-8,var%20dat%3Ddat%7C%7C%7B%7D%3Bdat.gui%3Ddat.gui%7C%7C%7B%7D%3Bdat.utils%3Ddat.utils%7C%7C%7B%7D%3Bdat.controllers%3Ddat.controllers%7C%7C%7B%7D%3Bdat.dom%3Ddat.dom%7C%7C%7B%7D%3Bdat.color%3Ddat.color%7C%7C%7B%7D%3Bdat.utils.css%3Dfunction()%7Breturn%7Bload%3Afunction(e%2Ca)%7Ba%3Da%7C%7Cdocument%3Bvar%20b%3Da.createElement(%22link%22)%3Bb.type%3D%22text%2Fcss%22%3Bb.rel%3D%22stylesheet%22%3Bb.href%3De%3Ba.getElementsByTagName(%22head%22)%5B0%5D.appendChild(b)%7D%2Cinject%3Afunction(e%2Ca)%7Ba%3Da%7C%7Cdocument%3Bvar%20b%3Ddocument.createElement(%22style%22)%3Bb.type%3D%22text%2Fcss%22%3Bb.innerHTML%3De%3Ba.getElementsByTagName(%22head%22)%5B0%5D.appendChild(b)%7D%7D%7D()%3B%0Adat.utils.common%3Dfunction()%7Bvar%20e%3DArray.prototype.forEach%2Ca%3DArray.prototype.slice%3Breturn%7BBREAK%3A%7B%7D%2Cextend%3Afunction(b)%7Bthis.each(a.call(arguments%2C1)%2Cfunction(a)%7Bfor(var%20f%20in%20a)this.isUndefined(a%5Bf%5D)%7C%7C(b%5Bf%5D%3Da%5Bf%5D)%7D%2Cthis)%3Breturn%20b%7D%2Cdefaults%3Afunction(b)%7Bthis.each(a.call(arguments%2C1)%2Cfunction(a)%7Bfor(var%20f%20in%20a)this.isUndefined(b%5Bf%5D)%26%26(b%5Bf%5D%3Da%5Bf%5D)%7D%2Cthis)%3Breturn%20b%7D%2Ccompose%3Afunction()%7Bvar%20b%3Da.call(arguments)%3Breturn%20function()%7Bfor(var%20d%3Da.call(arguments)%2Cf%3Db.length-1%3B0%3C%3Df%3Bf--)d%3D%5Bb%5Bf%5D.apply(this%2Cd)%5D%3Breturn%20d%5B0%5D%7D%7D%2C%0Aeach%3Afunction(a%2Cd%2Cf)%7Bif(e%26%26a.forEach%3D%3D%3De)a.forEach(d%2Cf)%3Belse%20if(a.length%3D%3D%3Da.length%2B0)for(var%20c%3D0%2Cp%3Da.length%3Bc%3Cp%26%26!(c%20in%20a%26%26d.call(f%2Ca%5Bc%5D%2Cc)%3D%3D%3Dthis.BREAK)%3Bc%2B%2B)%3Belse%20for(c%20in%20a)if(d.call(f%2Ca%5Bc%5D%2Cc)%3D%3D%3Dthis.BREAK)break%7D%2Cdefer%3Afunction(a)%7BsetTimeout(a%2C0)%7D%2CtoArray%3Afunction(b)%7Breturn%20b.toArray%3Fb.toArray()%3Aa.call(b)%7D%2CisUndefined%3Afunction(a)%7Breturn%20void%200%3D%3D%3Da%7D%2CisNull%3Afunction(a)%7Breturn%20null%3D%3D%3Da%7D%2CisNaN%3Afunction(a)%7Breturn%20a!%3D%3Da%7D%2CisArray%3AArray.isArray%7C%7Cfunction(a)%7Breturn%20a.constructor%3D%3D%3DArray%7D%2CisObject%3Afunction(a)%7Breturn%20a%3D%3D%3D%0AObject(a)%7D%2CisNumber%3Afunction(a)%7Breturn%20a%3D%3D%3Da%2B0%7D%2CisString%3Afunction(a)%7Breturn%20a%3D%3D%3Da%2B%22%22%7D%2CisBoolean%3Afunction(a)%7Breturn!1%3D%3D%3Da%7C%7C!0%3D%3D%3Da%7D%2CisFunction%3Afunction(a)%7Breturn%22%5Bobject%20Function%5D%22%3D%3D%3DObject.prototype.toString.call(a)%7D%7D%7D()%3B%0Adat.controllers.Controller%3Dfunction(e)%7Bvar%20a%3Dfunction(a%2Cd)%7Bthis.initialValue%3Da%5Bd%5D%3Bthis.domElement%3Ddocument.createElement(%22div%22)%3Bthis.object%3Da%3Bthis.property%3Dd%3Bthis.__onFinishChange%3Dthis.__onChange%3Dvoid%200%7D%3Be.extend(a.prototype%2C%7BonChange%3Afunction(a)%7Bthis.__onChange%3Da%3Breturn%20this%7D%2ConFinishChange%3Afunction(a)%7Bthis.__onFinishChange%3Da%3Breturn%20this%7D%2CsetValue%3Afunction(a)%7Bthis.object%5Bthis.property%5D%3Da%3Bthis.__onChange%26%26this.__onChange.call(this%2Ca)%3Bthis.updateDisplay()%3Breturn%20this%7D%2CgetValue%3Afunction()%7Breturn%20this.object%5Bthis.property%5D%7D%2C%0AupdateDisplay%3Afunction()%7Breturn%20this%7D%2CisModified%3Afunction()%7Breturn%20this.initialValue!%3D%3Dthis.getValue()%7D%7D)%3Breturn%20a%7D(dat.utils.common)%3B%0Adat.dom.dom%3Dfunction(e)%7Bfunction%20a(c)%7Bif(%220%22%3D%3D%3Dc%7C%7Ce.isUndefined(c))return%200%3Bc%3Dc.match(d)%3Breturn%20e.isNull(c)%3F0%3AparseFloat(c%5B1%5D)%7Dvar%20b%3D%7B%7D%3Be.each(%7BHTMLEvents%3A%5B%22change%22%5D%2CMouseEvents%3A%5B%22click%22%2C%22mousemove%22%2C%22mousedown%22%2C%22mouseup%22%2C%22mouseover%22%5D%2CKeyboardEvents%3A%5B%22keydown%22%5D%7D%2Cfunction(c%2Ca)%7Be.each(c%2Cfunction(c)%7Bb%5Bc%5D%3Da%7D)%7D)%3Bvar%20d%3D%2F(%5Cd%2B(%5C.%5Cd%2B)%3F)px%2F%2Cf%3D%7BmakeSelectable%3Afunction(c%2Ca)%7Bvoid%200!%3D%3Dc%26%26void%200!%3D%3Dc.style%26%26(c.onselectstart%3Da%3Ffunction()%7Breturn!1%7D%3Afunction()%7B%7D%2Cc.style.MozUserSelect%3Da%3F%22auto%22%3A%22none%22%2Cc.style.KhtmlUserSelect%3D%0Aa%3F%22auto%22%3A%22none%22%2Cc.unselectable%3Da%3F%22on%22%3A%22off%22)%7D%2CmakeFullscreen%3Afunction(c%2Ca%2Cd)%7Be.isUndefined(a)%26%26(a%3D!0)%3Be.isUndefined(d)%26%26(d%3D!0)%3Bc.style.position%3D%22absolute%22%3Ba%26%26(c.style.left%3D0%2Cc.style.right%3D0)%3Bd%26%26(c.style.top%3D0%2Cc.style.bottom%3D0)%7D%2CfakeEvent%3Afunction(c%2Ca%2Cd%2Cf)%7Bd%3Dd%7C%7C%7B%7D%3Bvar%20q%3Db%5Ba%5D%3Bif(!q)throw%20Error(%22Event%20type%20%22%2Ba%2B%22%20not%20supported.%22)%3Bvar%20n%3Ddocument.createEvent(q)%3Bswitch(q)%7Bcase%20%22MouseEvents%22%3An.initMouseEvent(a%2Cd.bubbles%7C%7C!1%2Cd.cancelable%7C%7C!0%2Cwindow%2Cd.clickCount%7C%7C1%2C0%2C0%2Cd.x%7C%7Cd.clientX%7C%7C0%2Cd.y%7C%7Cd.clientY%7C%7C0%2C!1%2C%0A!1%2C!1%2C!1%2C0%2Cnull)%3Bbreak%3Bcase%20%22KeyboardEvents%22%3Aq%3Dn.initKeyboardEvent%7C%7Cn.initKeyEvent%3Be.defaults(d%2C%7Bcancelable%3A!0%2CctrlKey%3A!1%2CaltKey%3A!1%2CshiftKey%3A!1%2CmetaKey%3A!1%2CkeyCode%3Avoid%200%2CcharCode%3Avoid%200%7D)%3Bq(a%2Cd.bubbles%7C%7C!1%2Cd.cancelable%2Cwindow%2Cd.ctrlKey%2Cd.altKey%2Cd.shiftKey%2Cd.metaKey%2Cd.keyCode%2Cd.charCode)%3Bbreak%3Bdefault%3An.initEvent(a%2Cd.bubbles%7C%7C!1%2Cd.cancelable%7C%7C!0)%7De.defaults(n%2Cf)%3Bc.dispatchEvent(n)%7D%2Cbind%3Afunction(c%2Ca%2Cd%2Cb)%7Bc.addEventListener%3Fc.addEventListener(a%2Cd%2Cb%7C%7C!1)%3Ac.attachEvent%26%26c.attachEvent(%22on%22%2Ba%2Cd)%3Breturn%20f%7D%2C%0Aunbind%3Afunction(c%2Ca%2Cd%2Cb)%7Bc.removeEventListener%3Fc.removeEventListener(a%2Cd%2Cb%7C%7C!1)%3Ac.detachEvent%26%26c.detachEvent(%22on%22%2Ba%2Cd)%3Breturn%20f%7D%2CaddClass%3Afunction(a%2Cd)%7Bif(void%200%3D%3D%3Da.className)a.className%3Dd%3Belse%20if(a.className!%3D%3Dd)%7Bvar%20b%3Da.className.split(%2F%20%2B%2F)%3B-1%3D%3Db.indexOf(d)%26%26(b.push(d)%2Ca.className%3Db.join(%22%20%22).replace(%2F%5E%5Cs%2B%2F%2C%22%22).replace(%2F%5Cs%2B%24%2F%2C%22%22))%7Dreturn%20f%7D%2CremoveClass%3Afunction(a%2Cd)%7Bif(d)%7Bif(void%200!%3D%3Da.className)if(a.className%3D%3D%3Dd)a.removeAttribute(%22class%22)%3Belse%7Bvar%20b%3Da.className.split(%2F%20%2B%2F)%2Ce%3Db.indexOf(d)%3B-1!%3D%0Ae%26%26(b.splice(e%2C1)%2Ca.className%3Db.join(%22%20%22))%7D%7Delse%20a.className%3Dvoid%200%3Breturn%20f%7D%2ChasClass%3Afunction(a%2Cd)%7Breturn%20RegExp(%22(%3F%3A%5E%7C%5C%5Cs%2B)%22%2Bd%2B%22(%3F%3A%5C%5Cs%2B%7C%24)%22).test(a.className)%7C%7C!1%7D%2CgetWidth%3Afunction(c)%7Bc%3DgetComputedStyle(c)%3Breturn%20a(c%5B%22border-left-width%22%5D)%2Ba(c%5B%22border-right-width%22%5D)%2Ba(c%5B%22padding-left%22%5D)%2Ba(c%5B%22padding-right%22%5D)%2Ba(c.width)%7D%2CgetHeight%3Afunction(c)%7Bc%3DgetComputedStyle(c)%3Breturn%20a(c%5B%22border-top-width%22%5D)%2Ba(c%5B%22border-bottom-width%22%5D)%2Ba(c%5B%22padding-top%22%5D)%2Ba(c%5B%22padding-bottom%22%5D)%2Ba(c.height)%7D%2CgetOffset%3Afunction(a)%7Bvar%20d%3D%0A%7Bleft%3A0%2Ctop%3A0%7D%3Bif(a.offsetParent)%7Bdo%20d.left%2B%3Da.offsetLeft%2Cd.top%2B%3Da.offsetTop%3Bwhile(a%3Da.offsetParent)%7Dreturn%20d%7D%2CisActive%3Afunction(a)%7Breturn%20a%3D%3D%3Ddocument.activeElement%26%26(a.type%7C%7Ca.href)%7D%7D%3Breturn%20f%7D(dat.utils.common)%3B%0Adat.controllers.OptionController%3Dfunction(e%2Ca%2Cb)%7Bvar%20d%3Dfunction(f%2Cc%2Ce)%7Bd.superclass.call(this%2Cf%2Cc)%3Bvar%20k%3Dthis%3Bthis.__select%3Ddocument.createElement(%22select%22)%3Bif(b.isArray(e))%7Bvar%20l%3D%7B%7D%3Bb.each(e%2Cfunction(a)%7Bl%5Ba%5D%3Da%7D)%3Be%3Dl%7Db.each(e%2Cfunction(a%2Cc)%7Bvar%20d%3Ddocument.createElement(%22option%22)%3Bd.innerHTML%3Dc%3Bd.setAttribute(%22value%22%2Ca)%3Bk.__select.appendChild(d)%7D)%3Bthis.updateDisplay()%3Ba.bind(this.__select%2C%22change%22%2Cfunction()%7Bk.setValue(this.options%5Bthis.selectedIndex%5D.value)%7D)%3Bthis.domElement.appendChild(this.__select)%7D%3B%0Ad.superclass%3De%3Bb.extend(d.prototype%2Ce.prototype%2C%7BsetValue%3Afunction(a)%7Ba%3Dd.superclass.prototype.setValue.call(this%2Ca)%3Bthis.__onFinishChange%26%26this.__onFinishChange.call(this%2Cthis.getValue())%3Breturn%20a%7D%2CupdateDisplay%3Afunction()%7Bthis.__select.value%3Dthis.getValue()%3Breturn%20d.superclass.prototype.updateDisplay.call(this)%7D%7D)%3Breturn%20d%7D(dat.controllers.Controller%2Cdat.dom.dom%2Cdat.utils.common)%3B%0Adat.controllers.NumberController%3Dfunction(e%2Ca)%7Bvar%20b%3Dfunction(d%2Cf%2Cc)%7Bb.superclass.call(this%2Cd%2Cf)%3Bc%3Dc%7C%7C%7B%7D%3Bthis.__min%3Dc.min%3Bthis.__max%3Dc.max%3Bthis.__step%3Dc.step%3Ba.isUndefined(this.__step)%3Fthis.__impliedStep%3D0%3D%3Dthis.initialValue%3F1%3AMath.pow(10%2CMath.floor(Math.log(this.initialValue)%2FMath.LN10))%2F10%3Athis.__impliedStep%3Dthis.__step%3Bd%3Dthis.__impliedStep%3Bd%3Dd.toString()%3Bd%3D-1%3Cd.indexOf(%22.%22)%3Fd.length-d.indexOf(%22.%22)-1%3A0%3Bthis.__precision%3Dd%7D%3Bb.superclass%3De%3Ba.extend(b.prototype%2Ce.prototype%2C%7BsetValue%3Afunction(a)%7Bvoid%200!%3D%3D%0Athis.__min%26%26a%3Cthis.__min%3Fa%3Dthis.__min%3Avoid%200!%3D%3Dthis.__max%26%26a%3Ethis.__max%26%26(a%3Dthis.__max)%3Bvoid%200!%3D%3Dthis.__step%26%260!%3Da%25this.__step%26%26(a%3DMath.round(a%2Fthis.__step)*this.__step)%3Breturn%20b.superclass.prototype.setValue.call(this%2Ca)%7D%2Cmin%3Afunction(a)%7Bthis.__min%3Da%3Breturn%20this%7D%2Cmax%3Afunction(a)%7Bthis.__max%3Da%3Breturn%20this%7D%2Cstep%3Afunction(a)%7Bthis.__step%3Da%3Breturn%20this%7D%7D)%3Breturn%20b%7D(dat.controllers.Controller%2Cdat.utils.common)%3B%0Adat.controllers.NumberControllerBox%3Dfunction(e%2Ca%2Cb)%7Bvar%20d%3Dfunction(f%2Cc%2Ce)%7Bfunction%20k()%7Bvar%20a%3DparseFloat(n.__input.value)%3Bb.isNaN(a)%7C%7Cn.setValue(a)%7Dfunction%20l(a)%7Bvar%20c%3Dr-a.clientY%3Bn.setValue(n.getValue()%2Bc*n.__impliedStep)%3Br%3Da.clientY%7Dfunction%20q()%7Ba.unbind(window%2C%22mousemove%22%2Cl)%3Ba.unbind(window%2C%22mouseup%22%2Cq)%7Dthis.__truncationSuspended%3D!1%3Bd.superclass.call(this%2Cf%2Cc%2Ce)%3Bvar%20n%3Dthis%2Cr%3Bthis.__input%3Ddocument.createElement(%22input%22)%3Bthis.__input.setAttribute(%22type%22%2C%22text%22)%3Ba.bind(this.__input%2C%22change%22%2Ck)%3Ba.bind(this.__input%2C%0A%22blur%22%2Cfunction()%7Bk()%3Bn.__onFinishChange%26%26n.__onFinishChange.call(n%2Cn.getValue())%7D)%3Ba.bind(this.__input%2C%22mousedown%22%2Cfunction(c)%7Ba.bind(window%2C%22mousemove%22%2Cl)%3Ba.bind(window%2C%22mouseup%22%2Cq)%3Br%3Dc.clientY%7D)%3Ba.bind(this.__input%2C%22keydown%22%2Cfunction(a)%7B13%3D%3D%3Da.keyCode%26%26(n.__truncationSuspended%3D!0%2Cthis.blur()%2Cn.__truncationSuspended%3D!1)%7D)%3Bthis.updateDisplay()%3Bthis.domElement.appendChild(this.__input)%7D%3Bd.superclass%3De%3Bb.extend(d.prototype%2Ce.prototype%2C%7BupdateDisplay%3Afunction()%7Bvar%20a%3Dthis.__input%2Cc%3Bif(this.__truncationSuspended)c%3D%0Athis.getValue()%3Belse%7Bc%3Dthis.getValue()%3Bvar%20b%3DMath.pow(10%2Cthis.__precision)%3Bc%3DMath.round(c*b)%2Fb%7Da.value%3Dc%3Breturn%20d.superclass.prototype.updateDisplay.call(this)%7D%7D)%3Breturn%20d%7D(dat.controllers.NumberController%2Cdat.dom.dom%2Cdat.utils.common)%3B%0Adat.controllers.NumberControllerSlider%3Dfunction(e%2Ca%2Cb%2Cd%2Cf)%7Bfunction%20c(a%2Cc%2Cd%2Cb%2Cf)%7Breturn%20b%2B(a-c)%2F(d-c)*(f-b)%7Dvar%20p%3Dfunction(d%2Cb%2Cf%2Ce%2Cr)%7Bfunction%20y(d)%7Bd.preventDefault()%3Bvar%20b%3Da.getOffset(h.__background)%2Cf%3Da.getWidth(h.__background)%3Bh.setValue(c(d.clientX%2Cb.left%2Cb.left%2Bf%2Ch.__min%2Ch.__max))%3Breturn!1%7Dfunction%20g()%7Ba.unbind(window%2C%22mousemove%22%2Cy)%3Ba.unbind(window%2C%22mouseup%22%2Cg)%3Bh.__onFinishChange%26%26h.__onFinishChange.call(h%2Ch.getValue())%7Dp.superclass.call(this%2Cd%2Cb%2C%7Bmin%3Af%2Cmax%3Ae%2Cstep%3Ar%7D)%3Bvar%20h%3Dthis%3Bthis.__background%3D%0Adocument.createElement(%22div%22)%3Bthis.__foreground%3Ddocument.createElement(%22div%22)%3Ba.bind(this.__background%2C%22mousedown%22%2Cfunction(c)%7Ba.bind(window%2C%22mousemove%22%2Cy)%3Ba.bind(window%2C%22mouseup%22%2Cg)%3By(c)%7D)%3Ba.addClass(this.__background%2C%22slider%22)%3Ba.addClass(this.__foreground%2C%22slider-fg%22)%3Bthis.updateDisplay()%3Bthis.__background.appendChild(this.__foreground)%3Bthis.domElement.appendChild(this.__background)%7D%3Bp.superclass%3De%3Bp.useDefaultStyles%3Dfunction()%7Bb.inject(f)%7D%3Bd.extend(p.prototype%2Ce.prototype%2C%7BupdateDisplay%3Afunction()%7Bvar%20a%3D%0A(this.getValue()-this.__min)%2F(this.__max-this.__min)%3Bthis.__foreground.style.width%3D100*a%2B%22%25%22%3Breturn%20p.superclass.prototype.updateDisplay.call(this)%7D%7D)%3Breturn%20p%7D(dat.controllers.NumberController%2Cdat.dom.dom%2Cdat.utils.css%2Cdat.utils.common%2C%22%2F**%5Cn%20*%20dat-gui%20JavaScript%20Controller%20Library%5Cn%20*%20http%3A%2F%2Fcode.google.com%2Fp%2Fdat-gui%5Cn%20*%5Cn%20*%20Copyright%202011%20Data%20Arts%20Team%2C%20Google%20Creative%20Lab%5Cn%20*%5Cn%20*%20Licensed%20under%20the%20Apache%20License%2C%20Version%202.0%20(the%20%5C%22License%5C%22)%3B%5Cn%20*%20you%20may%20not%20use%20this%20file%20except%20in%20compliance%20with%20the%20License.%5Cn%20*%20You%20may%20obtain%20a%20copy%20of%20the%20License%20at%5Cn%20*%5Cn%20*%20http%3A%2F%2Fwww.apache.org%2Flicenses%2FLICENSE-2.0%5Cn%20*%2F%5Cn%5Cn.slider%20%7B%5Cn%20%20box-shadow%3A%20inset%200%202px%204px%20rgba(0%2C0%2C0%2C0.15)%3B%5Cn%20%20height%3A%201em%3B%5Cn%20%20border-radius%3A%201em%3B%5Cn%20%20background-color%3A%20%23eee%3B%5Cn%20%20padding%3A%200%200.5em%3B%5Cn%20%20overflow%3A%20hidden%3B%5Cn%7D%5Cn%5Cn.slider-fg%20%7B%5Cn%20%20padding%3A%201px%200%202px%200%3B%5Cn%20%20background-color%3A%20%23aaa%3B%5Cn%20%20height%3A%201em%3B%5Cn%20%20margin-left%3A%20-0.5em%3B%5Cn%20%20padding-right%3A%200.5em%3B%5Cn%20%20border-radius%3A%201em%200%200%201em%3B%5Cn%7D%5Cn%5Cn.slider-fg%3Aafter%20%7B%5Cn%20%20display%3A%20inline-block%3B%5Cn%20%20border-radius%3A%201em%3B%5Cn%20%20background-color%3A%20%23fff%3B%5Cn%20%20border%3A%20%201px%20solid%20%23aaa%3B%5Cn%20%20content%3A%20''%3B%5Cn%20%20float%3A%20right%3B%5Cn%20%20margin-right%3A%20-1em%3B%5Cn%20%20margin-top%3A%20-1px%3B%5Cn%20%20height%3A%200.9em%3B%5Cn%20%20width%3A%200.9em%3B%5Cn%7D%22)%3B%0Adat.controllers.FunctionController%3Dfunction(e%2Ca%2Cb)%7Bvar%20d%3Dfunction(b%2Cc%2Ce)%7Bd.superclass.call(this%2Cb%2Cc)%3Bvar%20k%3Dthis%3Bthis.__button%3Ddocument.createElement(%22div%22)%3Bthis.__button.innerHTML%3Dvoid%200%3D%3D%3De%3F%22Fire%22%3Ae%3Ba.bind(this.__button%2C%22click%22%2Cfunction(a)%7Ba.preventDefault()%3Bk.fire()%3Breturn!1%7D)%3Ba.addClass(this.__button%2C%22button%22)%3Bthis.domElement.appendChild(this.__button)%7D%3Bd.superclass%3De%3Bb.extend(d.prototype%2Ce.prototype%2C%7Bfire%3Afunction()%7Bthis.__onChange%26%26this.__onChange.call(this)%3Bthis.__onFinishChange%26%26this.__onFinishChange.call(this%2C%0Athis.getValue())%3Bthis.getValue().call(this.object)%7D%7D)%3Breturn%20d%7D(dat.controllers.Controller%2Cdat.dom.dom%2Cdat.utils.common)%3B%0Adat.controllers.BooleanController%3Dfunction(e%2Ca%2Cb)%7Bvar%20d%3Dfunction(b%2Cc)%7Bd.superclass.call(this%2Cb%2Cc)%3Bvar%20e%3Dthis%3Bthis.__prev%3Dthis.getValue()%3Bthis.__checkbox%3Ddocument.createElement(%22input%22)%3Bthis.__checkbox.setAttribute(%22type%22%2C%22checkbox%22)%3Ba.bind(this.__checkbox%2C%22change%22%2Cfunction()%7Be.setValue(!e.__prev)%7D%2C!1)%3Bthis.domElement.appendChild(this.__checkbox)%3Bthis.updateDisplay()%7D%3Bd.superclass%3De%3Bb.extend(d.prototype%2Ce.prototype%2C%7BsetValue%3Afunction(a)%7Ba%3Dd.superclass.prototype.setValue.call(this%2Ca)%3Bthis.__onFinishChange%26%26%0Athis.__onFinishChange.call(this%2Cthis.getValue())%3Bthis.__prev%3Dthis.getValue()%3Breturn%20a%7D%2CupdateDisplay%3Afunction()%7B!0%3D%3D%3Dthis.getValue()%3F(this.__checkbox.setAttribute(%22checked%22%2C%22checked%22)%2Cthis.__checkbox.checked%3D!0)%3Athis.__checkbox.checked%3D!1%3Breturn%20d.superclass.prototype.updateDisplay.call(this)%7D%7D)%3Breturn%20d%7D(dat.controllers.Controller%2Cdat.dom.dom%2Cdat.utils.common)%3B%0Adat.color.toString%3Dfunction(e)%7Breturn%20function(a)%7Bif(1%3D%3Da.a%7C%7Ce.isUndefined(a.a))%7Bfor(a%3Da.hex.toString(16)%3B6%3Ea.length%3B)a%3D%220%22%2Ba%3Breturn%22%23%22%2Ba%7Dreturn%22rgba(%22%2BMath.round(a.r)%2B%22%2C%22%2BMath.round(a.g)%2B%22%2C%22%2BMath.round(a.b)%2B%22%2C%22%2Ba.a%2B%22)%22%7D%7D(dat.utils.common)%3B%0Adat.color.interpret%3Dfunction(e%2Ca)%7Bvar%20b%2Cd%2Cf%3D%5B%7Blitmus%3Aa.isString%2Cconversions%3A%7BTHREE_CHAR_HEX%3A%7Bread%3Afunction(a)%7Ba%3Da.match(%2F%5E%23(%5BA-F0-9%5D)(%5BA-F0-9%5D)(%5BA-F0-9%5D)%24%2Fi)%3Breturn%20null%3D%3D%3Da%3F!1%3A%7Bspace%3A%22HEX%22%2Chex%3AparseInt(%220x%22%2Ba%5B1%5D.toString()%2Ba%5B1%5D.toString()%2Ba%5B2%5D.toString()%2Ba%5B2%5D.toString()%2Ba%5B3%5D.toString()%2Ba%5B3%5D.toString())%7D%7D%2Cwrite%3Ae%7D%2CSIX_CHAR_HEX%3A%7Bread%3Afunction(a)%7Ba%3Da.match(%2F%5E%23(%5BA-F0-9%5D%7B6%7D)%24%2Fi)%3Breturn%20null%3D%3D%3Da%3F!1%3A%7Bspace%3A%22HEX%22%2Chex%3AparseInt(%220x%22%2Ba%5B1%5D.toString())%7D%7D%2Cwrite%3Ae%7D%2CCSS_RGB%3A%7Bread%3Afunction(a)%7Ba%3Da.match(%2F%5Ergb%5C(%5Cs*(.%2B)%5Cs*%2C%5Cs*(.%2B)%5Cs*%2C%5Cs*(.%2B)%5Cs*%5C)%2F)%3B%0Areturn%20null%3D%3D%3Da%3F!1%3A%7Bspace%3A%22RGB%22%2Cr%3AparseFloat(a%5B1%5D)%2Cg%3AparseFloat(a%5B2%5D)%2Cb%3AparseFloat(a%5B3%5D)%7D%7D%2Cwrite%3Ae%7D%2CCSS_RGBA%3A%7Bread%3Afunction(a)%7Ba%3Da.match(%2F%5Ergba%5C(%5Cs*(.%2B)%5Cs*%2C%5Cs*(.%2B)%5Cs*%2C%5Cs*(.%2B)%5Cs*%5C%2C%5Cs*(.%2B)%5Cs*%5C)%2F)%3Breturn%20null%3D%3D%3Da%3F!1%3A%7Bspace%3A%22RGB%22%2Cr%3AparseFloat(a%5B1%5D)%2Cg%3AparseFloat(a%5B2%5D)%2Cb%3AparseFloat(a%5B3%5D)%2Ca%3AparseFloat(a%5B4%5D)%7D%7D%2Cwrite%3Ae%7D%7D%7D%2C%7Blitmus%3Aa.isNumber%2Cconversions%3A%7BHEX%3A%7Bread%3Afunction(a)%7Breturn%7Bspace%3A%22HEX%22%2Chex%3Aa%2CconversionName%3A%22HEX%22%7D%7D%2Cwrite%3Afunction(a)%7Breturn%20a.hex%7D%7D%7D%7D%2C%7Blitmus%3Aa.isArray%2Cconversions%3A%7BRGB_ARRAY%3A%7Bread%3Afunction(a)%7Breturn%203!%3D%0Aa.length%3F!1%3A%7Bspace%3A%22RGB%22%2Cr%3Aa%5B0%5D%2Cg%3Aa%5B1%5D%2Cb%3Aa%5B2%5D%7D%7D%2Cwrite%3Afunction(a)%7Breturn%5Ba.r%2Ca.g%2Ca.b%5D%7D%7D%2CRGBA_ARRAY%3A%7Bread%3Afunction(a)%7Breturn%204!%3Da.length%3F!1%3A%7Bspace%3A%22RGB%22%2Cr%3Aa%5B0%5D%2Cg%3Aa%5B1%5D%2Cb%3Aa%5B2%5D%2Ca%3Aa%5B3%5D%7D%7D%2Cwrite%3Afunction(a)%7Breturn%5Ba.r%2Ca.g%2Ca.b%2Ca.a%5D%7D%7D%7D%7D%2C%7Blitmus%3Aa.isObject%2Cconversions%3A%7BRGBA_OBJ%3A%7Bread%3Afunction(c)%7Breturn%20a.isNumber(c.r)%26%26a.isNumber(c.g)%26%26a.isNumber(c.b)%26%26a.isNumber(c.a)%3F%7Bspace%3A%22RGB%22%2Cr%3Ac.r%2Cg%3Ac.g%2Cb%3Ac.b%2Ca%3Ac.a%7D%3A!1%7D%2Cwrite%3Afunction(a)%7Breturn%7Br%3Aa.r%2Cg%3Aa.g%2Cb%3Aa.b%2Ca%3Aa.a%7D%7D%7D%2CRGB_OBJ%3A%7Bread%3Afunction(c)%7Breturn%20a.isNumber(c.r)%26%26%0Aa.isNumber(c.g)%26%26a.isNumber(c.b)%3F%7Bspace%3A%22RGB%22%2Cr%3Ac.r%2Cg%3Ac.g%2Cb%3Ac.b%7D%3A!1%7D%2Cwrite%3Afunction(a)%7Breturn%7Br%3Aa.r%2Cg%3Aa.g%2Cb%3Aa.b%7D%7D%7D%2CHSVA_OBJ%3A%7Bread%3Afunction(c)%7Breturn%20a.isNumber(c.h)%26%26a.isNumber(c.s)%26%26a.isNumber(c.v)%26%26a.isNumber(c.a)%3F%7Bspace%3A%22HSV%22%2Ch%3Ac.h%2Cs%3Ac.s%2Cv%3Ac.v%2Ca%3Ac.a%7D%3A!1%7D%2Cwrite%3Afunction(a)%7Breturn%7Bh%3Aa.h%2Cs%3Aa.s%2Cv%3Aa.v%2Ca%3Aa.a%7D%7D%7D%2CHSV_OBJ%3A%7Bread%3Afunction(d)%7Breturn%20a.isNumber(d.h)%26%26a.isNumber(d.s)%26%26a.isNumber(d.v)%3F%7Bspace%3A%22HSV%22%2Ch%3Ad.h%2Cs%3Ad.s%2Cv%3Ad.v%7D%3A!1%7D%2Cwrite%3Afunction(a)%7Breturn%7Bh%3Aa.h%2Cs%3Aa.s%2Cv%3Aa.v%7D%7D%7D%7D%7D%5D%3Breturn%20function()%7Bd%3D!1%3B%0Avar%20c%3D1%3Carguments.length%3Fa.toArray(arguments)%3Aarguments%5B0%5D%3Ba.each(f%2Cfunction(e)%7Bif(e.litmus(c))return%20a.each(e.conversions%2Cfunction(e%2Cf)%7Bb%3De.read(c)%3Bif(!1%3D%3D%3Dd%26%26!1!%3D%3Db)return%20d%3Db%2Cb.conversionName%3Df%2Cb.conversion%3De%2Ca.BREAK%7D)%2Ca.BREAK%7D)%3Breturn%20d%7D%7D(dat.color.toString%2Cdat.utils.common)%3B%0Adat.GUI%3Ddat.gui.GUI%3Dfunction(e%2Ca%2Cb%2Cd%2Cf%2Cc%2Cp%2Ck%2Cl%2Cq%2Cn%2Cr%2Cy%2Cg%2Ch)%7Bfunction%20t(a%2Cc%2Cb%2Ce)%7Bif(void%200%3D%3D%3Dc%5Bb%5D)throw%20Error(%22Object%20%22%2Bc%2B'%20has%20no%20property%20%22'%2Bb%2B'%22')%3Be.color%3Fc%3Dnew%20n(c%2Cb)%3A(c%3D%5Bc%2Cb%5D.concat(e.factoryArgs)%2Cc%3Dd.apply(a%2Cc))%3Be.before%20instanceof%20f%26%26(e.before%3De.before.__li)%3Bv(a%2Cc)%3Bg.addClass(c.domElement%2C%22c%22)%3Bb%3Ddocument.createElement(%22span%22)%3Bg.addClass(b%2C%22property-name%22)%3Bb.innerHTML%3Dc.property%3Bvar%20q%3Ddocument.createElement(%22div%22)%3Bq.appendChild(b)%3Bq.appendChild(c.domElement)%3Be%3Du(a%2Cq%2Ce.before)%3Bg.addClass(e%2Cm.CLASS_CONTROLLER_ROW)%3B%0Ag.addClass(e%2Ctypeof%20c.getValue())%3Bs(a%2Ce%2Cc)%3Ba.__controllers.push(c)%3Breturn%20c%7Dfunction%20u(a%2Cd%2Cc)%7Bvar%20b%3Ddocument.createElement(%22li%22)%3Bd%26%26b.appendChild(d)%3Bc%3Fa.__ul.insertBefore(b%2Cparams.before)%3Aa.__ul.appendChild(b)%3Ba.onResize()%3Breturn%20b%7Dfunction%20s(a%2Cd%2Cb)%7Bb.__li%3Dd%3Bb.__gui%3Da%3Bh.extend(b%2C%7Boptions%3Afunction(d)%7Bif(1%3Carguments.length)return%20b.remove()%2Ct(a%2Cb.object%2Cb.property%2C%7Bbefore%3Ab.__li.nextElementSibling%2CfactoryArgs%3A%5Bh.toArray(arguments)%5D%7D)%3Bif(h.isArray(d)%7C%7Ch.isObject(d))return%20b.remove()%2Ct(a%2Cb.object%2Cb.property%2C%0A%7Bbefore%3Ab.__li.nextElementSibling%2CfactoryArgs%3A%5Bd%5D%7D)%7D%2Cname%3Afunction(a)%7Bb.__li.firstElementChild.firstElementChild.innerHTML%3Da%3Breturn%20b%7D%2Clisten%3Afunction()%7Bb.__gui.listen(b)%3Breturn%20b%7D%2Cremove%3Afunction()%7Bb.__gui.remove(b)%3Breturn%20b%7D%7D)%3Bif(b%20instanceof%20l)%7Bvar%20e%3Dnew%20k(b.object%2Cb.property%2C%7Bmin%3Ab.__min%2Cmax%3Ab.__max%2Cstep%3Ab.__step%7D)%3Bh.each(%5B%22updateDisplay%22%2C%22onChange%22%2C%22onFinishChange%22%5D%2Cfunction(a)%7Bvar%20d%3Db%5Ba%5D%2CJ%3De%5Ba%5D%3Bb%5Ba%5D%3De%5Ba%5D%3Dfunction()%7Bvar%20a%3DArray.prototype.slice.call(arguments)%3Bd.apply(b%2Ca)%3Breturn%20J.apply(e%2Ca)%7D%7D)%3B%0Ag.addClass(d%2C%22has-slider%22)%3Bb.domElement.insertBefore(e.domElement%2Cb.domElement.firstElementChild)%7Delse%20if(b%20instanceof%20k)%7Bvar%20f%3Dfunction(d)%7Breturn%20h.isNumber(b.__min)%26%26h.isNumber(b.__max)%3F(b.remove()%2Ct(a%2Cb.object%2Cb.property%2C%7Bbefore%3Ab.__li.nextElementSibling%2CfactoryArgs%3A%5Bb.__min%2Cb.__max%2Cb.__step%5D%7D))%3Ad%7D%3Bb.min%3Dh.compose(f%2Cb.min)%3Bb.max%3Dh.compose(f%2Cb.max)%7Delse%20b%20instanceof%20c%3F(g.bind(d%2C%22click%22%2Cfunction()%7Bg.fakeEvent(b.__checkbox%2C%22click%22)%7D)%2Cg.bind(b.__checkbox%2C%22click%22%2Cfunction(a)%7Ba.stopPropagation()%7D))%3A%0Ab%20instanceof%20p%3F(g.bind(d%2C%22click%22%2Cfunction()%7Bg.fakeEvent(b.__button%2C%22click%22)%7D)%2Cg.bind(d%2C%22mouseover%22%2Cfunction()%7Bg.addClass(b.__button%2C%22hover%22)%7D)%2Cg.bind(d%2C%22mouseout%22%2Cfunction()%7Bg.removeClass(b.__button%2C%22hover%22)%7D))%3Ab%20instanceof%20n%26%26(g.addClass(d%2C%22color%22)%2Cb.updateDisplay%3Dh.compose(function(a)%7Bd.style.borderLeftColor%3Db.__color.toString()%3Breturn%20a%7D%2Cb.updateDisplay)%2Cb.updateDisplay())%3Bb.setValue%3Dh.compose(function(d)%7Ba.getRoot().__preset_select%26%26b.isModified()%26%26D(a.getRoot()%2C!0)%3Breturn%20d%7D%2Cb.setValue)%7Dfunction%20v(a%2C%0Ad)%7Bvar%20b%3Da.getRoot()%2Cc%3Db.__rememberedObjects.indexOf(d.object)%3Bif(-1!%3Dc)%7Bvar%20e%3Db.__rememberedObjectIndecesToControllers%5Bc%5D%3Bvoid%200%3D%3D%3De%26%26(e%3D%7B%7D%2Cb.__rememberedObjectIndecesToControllers%5Bc%5D%3De)%3Be%5Bd.property%5D%3Dd%3Bif(b.load%26%26b.load.remembered)%7Bb%3Db.load.remembered%3Bif(b%5Ba.preset%5D)b%3Db%5Ba.preset%5D%3Belse%20if(b%5Bz%5D)b%3Db%5Bz%5D%3Belse%20return%3Bb%5Bc%5D%26%26void%200!%3D%3Db%5Bc%5D%5Bd.property%5D%26%26(c%3Db%5Bc%5D%5Bd.property%5D%2Cd.initialValue%3Dc%2Cd.setValue(c))%7D%7D%7Dfunction%20K(a)%7Bvar%20b%3Da.__save_row%3Ddocument.createElement(%22li%22)%3Bg.addClass(a.domElement%2C%22has-save%22)%3Ba.__ul.insertBefore(b%2C%0Aa.__ul.firstChild)%3Bg.addClass(b%2C%22save-row%22)%3Bvar%20d%3Ddocument.createElement(%22span%22)%3Bd.innerHTML%3D%22%26nbsp%3B%22%3Bg.addClass(d%2C%22button%20gears%22)%3Bvar%20c%3Ddocument.createElement(%22span%22)%3Bc.innerHTML%3D%22Save%22%3Bg.addClass(c%2C%22button%22)%3Bg.addClass(c%2C%22save%22)%3Bvar%20e%3Ddocument.createElement(%22span%22)%3Be.innerHTML%3D%22New%22%3Bg.addClass(e%2C%22button%22)%3Bg.addClass(e%2C%22save-as%22)%3Bvar%20f%3Ddocument.createElement(%22span%22)%3Bf.innerHTML%3D%22Revert%22%3Bg.addClass(f%2C%22button%22)%3Bg.addClass(f%2C%22revert%22)%3Bvar%20q%3Da.__preset_select%3Ddocument.createElement(%22select%22)%3Ba.load%26%26%0Aa.load.remembered%3Fh.each(a.load.remembered%2Cfunction(b%2Cd)%7BE(a%2Cd%2Cd%3D%3Da.preset)%7D)%3AE(a%2Cz%2C!1)%3Bg.bind(q%2C%22change%22%2Cfunction()%7Bfor(var%20b%3D0%3Bb%3Ca.__preset_select.length%3Bb%2B%2B)a.__preset_select%5Bb%5D.innerHTML%3Da.__preset_select%5Bb%5D.value%3Ba.preset%3Dthis.value%7D)%3Bb.appendChild(q)%3Bb.appendChild(d)%3Bb.appendChild(c)%3Bb.appendChild(e)%3Bb.appendChild(f)%3Bif(w)%7Bvar%20b%3Ddocument.getElementById(%22dg-save-locally%22)%2Cn%3Ddocument.getElementById(%22dg-local-explain%22)%3Bb.style.display%3D%22block%22%3Bb%3Ddocument.getElementById(%22dg-local-storage%22)%3B%22true%22%3D%3D%3D%0AlocalStorage.getItem(document.location.href%2B%22.isLocal%22)%26%26b.setAttribute(%22checked%22%2C%22checked%22)%3Bvar%20k%3Dfunction()%7Bn.style.display%3Da.useLocalStorage%3F%22block%22%3A%22none%22%7D%3Bk()%3Bg.bind(b%2C%22change%22%2Cfunction()%7Ba.useLocalStorage%3D!a.useLocalStorage%3Bk()%7D)%7Dvar%20r%3Ddocument.getElementById(%22dg-new-constructor%22)%3Bg.bind(r%2C%22keydown%22%2Cfunction(a)%7B!a.metaKey%7C%7C67!%3D%3Da.which%26%2667!%3Da.keyCode%7C%7CA.hide()%7D)%3Bg.bind(d%2C%22click%22%2Cfunction()%7Br.innerHTML%3DJSON.stringify(a.getSaveObject()%2Cvoid%200%2C2)%3BA.show()%3Br.focus()%3Br.select()%7D)%3Bg.bind(c%2C%22click%22%2C%0Afunction()%7Ba.save()%7D)%3Bg.bind(e%2C%22click%22%2Cfunction()%7Bvar%20b%3Dprompt(%22Enter%20a%20new%20preset%20name.%22)%3Bb%26%26a.saveAs(b)%7D)%3Bg.bind(f%2C%22click%22%2Cfunction()%7Ba.revert()%7D)%7Dfunction%20L(a)%7Bfunction%20b(f)%7Bf.preventDefault()%3Be%3Df.clientX%3Bg.addClass(a.__closeButton%2Cm.CLASS_DRAG)%3Bg.bind(window%2C%22mousemove%22%2Cd)%3Bg.bind(window%2C%22mouseup%22%2Cc)%3Breturn!1%7Dfunction%20d(b)%7Bb.preventDefault()%3Ba.width%2B%3De-b.clientX%3Ba.onResize()%3Be%3Db.clientX%3Breturn!1%7Dfunction%20c()%7Bg.removeClass(a.__closeButton%2Cm.CLASS_DRAG)%3Bg.unbind(window%2C%22mousemove%22%2Cd)%3Bg.unbind(window%2C%0A%22mouseup%22%2Cc)%7Da.__resize_handle%3Ddocument.createElement(%22div%22)%3Bh.extend(a.__resize_handle.style%2C%7Bwidth%3A%226px%22%2CmarginLeft%3A%22-3px%22%2Cheight%3A%22200px%22%2Ccursor%3A%22ew-resize%22%2Cposition%3A%22absolute%22%7D)%3Bvar%20e%3Bg.bind(a.__resize_handle%2C%22mousedown%22%2Cb)%3Bg.bind(a.__closeButton%2C%22mousedown%22%2Cb)%3Ba.domElement.insertBefore(a.__resize_handle%2Ca.domElement.firstElementChild)%7Dfunction%20F(a%2Cb)%7Ba.domElement.style.width%3Db%2B%22px%22%3Ba.__save_row%26%26a.autoPlace%26%26(a.__save_row.style.width%3Db%2B%22px%22)%3Ba.__closeButton%26%26(a.__closeButton.style.width%3Db%2B%22px%22)%7D%0Afunction%20B(a%2Cb)%7Bvar%20d%3D%7B%7D%3Bh.each(a.__rememberedObjects%2Cfunction(c%2Ce)%7Bvar%20f%3D%7B%7D%3Bh.each(a.__rememberedObjectIndecesToControllers%5Be%5D%2Cfunction(a%2Cd)%7Bf%5Bd%5D%3Db%3Fa.initialValue%3Aa.getValue()%7D)%3Bd%5Be%5D%3Df%7D)%3Breturn%20d%7Dfunction%20E(a%2Cb%2Cd)%7Bvar%20c%3Ddocument.createElement(%22option%22)%3Bc.innerHTML%3Db%3Bc.value%3Db%3Ba.__preset_select.appendChild(c)%3Bd%26%26(a.__preset_select.selectedIndex%3Da.__preset_select.length-1)%7Dfunction%20D(a%2Cb)%7Bvar%20d%3Da.__preset_select%5Ba.__preset_select.selectedIndex%5D%3Bd.innerHTML%3Db%3Fd.value%2B%22*%22%3Ad.value%7Dfunction%20G(a)%7B0!%3Da.length%26%26%0Ar(function()%7BG(a)%7D)%3Bh.each(a%2Cfunction(a)%7Ba.updateDisplay()%7D)%7De.inject(b)%3Bvar%20z%3D%22Default%22%2Cw%3Btry%7Bw%3D%22localStorage%22in%20window%26%26null!%3D%3Dwindow.localStorage%7Dcatch(M)%7Bw%3D!1%7Dvar%20A%2CH%3D!0%2Cx%2CC%3D!1%2CI%3D%5B%5D%2Cm%3Dfunction(a)%7Bfunction%20b()%7BlocalStorage.setItem(document.location.href%2B%22.gui%22%2CJSON.stringify(c.getSaveObject()))%7Dfunction%20d()%7Bvar%20a%3Dc.getRoot()%3Ba.width%2B%3D1%3Bh.defer(function()%7Ba.width-%3D1%7D)%7Dvar%20c%3Dthis%3Bthis.domElement%3Ddocument.createElement(%22div%22)%3Bthis.__ul%3Ddocument.createElement(%22ul%22)%3Bthis.domElement.appendChild(this.__ul)%3B%0Ag.addClass(this.domElement%2C%22dg%22)%3Bthis.__folders%3D%7B%7D%3Bthis.__controllers%3D%5B%5D%3Bthis.__rememberedObjects%3D%5B%5D%3Bthis.__rememberedObjectIndecesToControllers%3D%5B%5D%3Bthis.__listening%3D%5B%5D%3Ba%3Da%7C%7C%7B%7D%3Ba%3Dh.defaults(a%2C%7BautoPlace%3A!0%2Cwidth%3Am.DEFAULT_WIDTH%7D)%3Ba%3Dh.defaults(a%2C%7Bresizable%3Aa.autoPlace%2Chideable%3Aa.autoPlace%7D)%3Bh.isUndefined(a.load)%3Fa.load%3D%7Bpreset%3Az%7D%3Aa.preset%26%26(a.load.preset%3Da.preset)%3Bh.isUndefined(a.parent)%26%26a.hideable%26%26I.push(this)%3Ba.resizable%3Dh.isUndefined(a.parent)%26%26a.resizable%3Ba.autoPlace%26%26h.isUndefined(a.scrollable)%26%26%0A(a.scrollable%3D!0)%3Bvar%20e%3Dw%26%26%22true%22%3D%3D%3DlocalStorage.getItem(document.location.href%2B%22.isLocal%22)%3BObject.defineProperties(this%2C%7Bparent%3A%7Bget%3Afunction()%7Breturn%20a.parent%7D%7D%2Cscrollable%3A%7Bget%3Afunction()%7Breturn%20a.scrollable%7D%7D%2CautoPlace%3A%7Bget%3Afunction()%7Breturn%20a.autoPlace%7D%7D%2Cpreset%3A%7Bget%3Afunction()%7Breturn%20c.parent%3Fc.getRoot().preset%3Aa.load.preset%7D%2Cset%3Afunction(b)%7Bc.parent%3Fc.getRoot().preset%3Db%3Aa.load.preset%3Db%3Bfor(b%3D0%3Bb%3Cthis.__preset_select.length%3Bb%2B%2B)this.__preset_select%5Bb%5D.value%3D%3Dthis.preset%26%26(this.__preset_select.selectedIndex%3D%0Ab)%3Bc.revert()%7D%7D%2Cwidth%3A%7Bget%3Afunction()%7Breturn%20a.width%7D%2Cset%3Afunction(b)%7Ba.width%3Db%3BF(c%2Cb)%7D%7D%2Cname%3A%7Bget%3Afunction()%7Breturn%20a.name%7D%2Cset%3Afunction(b)%7Ba.name%3Db%3Bq%26%26(q.innerHTML%3Da.name)%7D%7D%2Cclosed%3A%7Bget%3Afunction()%7Breturn%20a.closed%7D%2Cset%3Afunction(b)%7Ba.closed%3Db%3Ba.closed%3Fg.addClass(c.__ul%2Cm.CLASS_CLOSED)%3Ag.removeClass(c.__ul%2Cm.CLASS_CLOSED)%3Bthis.onResize()%3Bc.__closeButton%26%26(c.__closeButton.innerHTML%3Db%3Fm.TEXT_OPEN%3Am.TEXT_CLOSED)%7D%7D%2Cload%3A%7Bget%3Afunction()%7Breturn%20a.load%7D%7D%2CuseLocalStorage%3A%7Bget%3Afunction()%7Breturn%20e%7D%2Cset%3Afunction(a)%7Bw%26%26%0A((e%3Da)%3Fg.bind(window%2C%22unload%22%2Cb)%3Ag.unbind(window%2C%22unload%22%2Cb)%2ClocalStorage.setItem(document.location.href%2B%22.isLocal%22%2Ca))%7D%7D%7D)%3Bif(h.isUndefined(a.parent))%7Ba.closed%3D!1%3Bg.addClass(this.domElement%2Cm.CLASS_MAIN)%3Bg.makeSelectable(this.domElement%2C!1)%3Bif(w%26%26e)%7Bc.useLocalStorage%3D!0%3Bvar%20f%3DlocalStorage.getItem(document.location.href%2B%22.gui%22)%3Bf%26%26(a.load%3DJSON.parse(f))%7Dthis.__closeButton%3Ddocument.createElement(%22div%22)%3Bthis.__closeButton.innerHTML%3Dm.TEXT_CLOSED%3Bg.addClass(this.__closeButton%2Cm.CLASS_CLOSE_BUTTON)%3Bthis.domElement.appendChild(this.__closeButton)%3B%0Ag.bind(this.__closeButton%2C%22click%22%2Cfunction()%7Bc.closed%3D!c.closed%7D)%7Delse%7Bvoid%200%3D%3D%3Da.closed%26%26(a.closed%3D!0)%3Bvar%20q%3Ddocument.createTextNode(a.name)%3Bg.addClass(q%2C%22controller-name%22)%3Bf%3Du(c%2Cq)%3Bg.addClass(this.__ul%2Cm.CLASS_CLOSED)%3Bg.addClass(f%2C%22title%22)%3Bg.bind(f%2C%22click%22%2Cfunction(a)%7Ba.preventDefault()%3Bc.closed%3D!c.closed%3Breturn!1%7D)%3Ba.closed%7C%7C(this.closed%3D!1)%7Da.autoPlace%26%26(h.isUndefined(a.parent)%26%26(H%26%26(x%3Ddocument.createElement(%22div%22)%2Cg.addClass(x%2C%22dg%22)%2Cg.addClass(x%2Cm.CLASS_AUTO_PLACE_CONTAINER)%2Cdocument.body.appendChild(x)%2C%0AH%3D!1)%2Cx.appendChild(this.domElement)%2Cg.addClass(this.domElement%2Cm.CLASS_AUTO_PLACE))%2Cthis.parent%7C%7CF(c%2Ca.width))%3Bg.bind(window%2C%22resize%22%2Cfunction()%7Bc.onResize()%7D)%3Bg.bind(this.__ul%2C%22webkitTransitionEnd%22%2Cfunction()%7Bc.onResize()%7D)%3Bg.bind(this.__ul%2C%22transitionend%22%2Cfunction()%7Bc.onResize()%7D)%3Bg.bind(this.__ul%2C%22oTransitionEnd%22%2Cfunction()%7Bc.onResize()%7D)%3Bthis.onResize()%3Ba.resizable%26%26L(this)%3Bc.getRoot()%3Ba.parent%7C%7Cd()%7D%3Bm.toggleHide%3Dfunction()%7BC%3D!C%3Bh.each(I%2Cfunction(a)%7Ba.domElement.style.zIndex%3DC%3F-999%3A999%3Ba.domElement.style.opacity%3D%0AC%3F0%3A1%7D)%7D%3Bm.CLASS_AUTO_PLACE%3D%22a%22%3Bm.CLASS_AUTO_PLACE_CONTAINER%3D%22ac%22%3Bm.CLASS_MAIN%3D%22main%22%3Bm.CLASS_CONTROLLER_ROW%3D%22cr%22%3Bm.CLASS_TOO_TALL%3D%22taller-than-window%22%3Bm.CLASS_CLOSED%3D%22closed%22%3Bm.CLASS_CLOSE_BUTTON%3D%22close-button%22%3Bm.CLASS_DRAG%3D%22drag%22%3Bm.DEFAULT_WIDTH%3D245%3Bm.TEXT_CLOSED%3D%22Close%20Controls%22%3Bm.TEXT_OPEN%3D%22Open%20Controls%22%3Bg.bind(window%2C%22keydown%22%2Cfunction(a)%7B%22text%22%3D%3D%3Ddocument.activeElement.type%7C%7C72!%3D%3Da.which%26%2672!%3Da.keyCode%7C%7Cm.toggleHide()%7D%2C!1)%3Bh.extend(m.prototype%2C%7Badd%3Afunction(a%2Cb)%7Breturn%20t(this%2Ca%2Cb%2C%7BfactoryArgs%3AArray.prototype.slice.call(arguments%2C%0A2)%7D)%7D%2CaddColor%3Afunction(a%2Cb)%7Breturn%20t(this%2Ca%2Cb%2C%7Bcolor%3A!0%7D)%7D%2Cremove%3Afunction(a)%7Bthis.__ul.removeChild(a.__li)%3Bthis.__controllers.slice(this.__controllers.indexOf(a)%2C1)%3Bvar%20b%3Dthis%3Bh.defer(function()%7Bb.onResize()%7D)%7D%2Cdestroy%3Afunction()%7Bthis.autoPlace%26%26x.removeChild(this.domElement)%7D%2CaddFolder%3Afunction(a)%7Bif(void%200!%3D%3Dthis.__folders%5Ba%5D)throw%20Error('You%20already%20have%20a%20folder%20in%20this%20GUI%20by%20the%20name%20%22'%2Ba%2B'%22')%3Bvar%20b%3D%7Bname%3Aa%2Cparent%3Athis%7D%3Bb.autoPlace%3Dthis.autoPlace%3Bthis.load%26%26this.load.folders%26%26this.load.folders%5Ba%5D%26%26%0A(b.closed%3Dthis.load.folders%5Ba%5D.closed%2Cb.load%3Dthis.load.folders%5Ba%5D)%3Bb%3Dnew%20m(b)%3Bthis.__folders%5Ba%5D%3Db%3Ba%3Du(this%2Cb.domElement)%3Bg.addClass(a%2C%22folder%22)%3Breturn%20b%7D%2Copen%3Afunction()%7Bthis.closed%3D!1%7D%2Cclose%3Afunction()%7Bthis.closed%3D!0%7D%2ConResize%3Afunction()%7Bvar%20a%3Dthis.getRoot()%3Bif(a.scrollable)%7Bvar%20b%3Dg.getOffset(a.__ul).top%2Cd%3D0%3Bh.each(a.__ul.childNodes%2Cfunction(b)%7Ba.autoPlace%26%26b%3D%3D%3Da.__save_row%7C%7C(d%2B%3Dg.getHeight(b))%7D)%3Bwindow.innerHeight-b-20%3Cd%3F(g.addClass(a.domElement%2Cm.CLASS_TOO_TALL)%2Ca.__ul.style.height%3Dwindow.innerHeight-%0Ab-20%2B%22px%22)%3A(g.removeClass(a.domElement%2Cm.CLASS_TOO_TALL)%2Ca.__ul.style.height%3D%22auto%22)%7Da.__resize_handle%26%26h.defer(function()%7Ba.__resize_handle.style.height%3Da.__ul.offsetHeight%2B%22px%22%7D)%3Ba.__closeButton%26%26(a.__closeButton.style.width%3Da.width%2B%22px%22)%7D%2Cremember%3Afunction()%7Bh.isUndefined(A)%26%26(A%3Dnew%20y%2CA.domElement.innerHTML%3Da)%3Bif(this.parent)throw%20Error(%22You%20can%20only%20call%20remember%20on%20a%20top%20level%20GUI.%22)%3Bvar%20b%3Dthis%3Bh.each(Array.prototype.slice.call(arguments)%2Cfunction(a)%7B0%3D%3Db.__rememberedObjects.length%26%26K(b)%3B-1%3D%3D%0Ab.__rememberedObjects.indexOf(a)%26%26b.__rememberedObjects.push(a)%7D)%3Bthis.autoPlace%26%26F(this%2Cthis.width)%7D%2CgetRoot%3Afunction()%7Bfor(var%20a%3Dthis%3Ba.parent%3B)a%3Da.parent%3Breturn%20a%7D%2CgetSaveObject%3Afunction()%7Bvar%20a%3Dthis.load%3Ba.closed%3Dthis.closed%3B0%3Cthis.__rememberedObjects.length%26%26(a.preset%3Dthis.preset%2Ca.remembered%7C%7C(a.remembered%3D%7B%7D)%2Ca.remembered%5Bthis.preset%5D%3DB(this))%3Ba.folders%3D%7B%7D%3Bh.each(this.__folders%2Cfunction(b%2Cd)%7Ba.folders%5Bd%5D%3Db.getSaveObject()%7D)%3Breturn%20a%7D%2Csave%3Afunction()%7Bthis.load.remembered%7C%7C(this.load.remembered%3D%0A%7B%7D)%3Bthis.load.remembered%5Bthis.preset%5D%3DB(this)%3BD(this%2C!1)%7D%2CsaveAs%3Afunction(a)%7Bthis.load.remembered%7C%7C(this.load.remembered%3D%7B%7D%2Cthis.load.remembered%5Bz%5D%3DB(this%2C!0))%3Bthis.load.remembered%5Ba%5D%3DB(this)%3Bthis.preset%3Da%3BE(this%2Ca%2C!0)%7D%2Crevert%3Afunction(a)%7Bh.each(this.__controllers%2Cfunction(b)%7Bthis.getRoot().load.remembered%3Fv(a%7C%7Cthis.getRoot()%2Cb)%3Ab.setValue(b.initialValue)%7D%2Cthis)%3Bh.each(this.__folders%2Cfunction(a)%7Ba.revert(a)%7D)%3Ba%7C%7CD(this.getRoot()%2C!1)%7D%2Clisten%3Afunction(a)%7Bvar%20b%3D0%3D%3Dthis.__listening.length%3Bthis.__listening.push(a)%3B%0Ab%26%26G(this.__listening)%7D%7D)%3Breturn%20m%7D(dat.utils.css%2C'%3Cdiv%20id%3D%22dg-save%22%20class%3D%22dg%20dialogue%22%3E%5Cn%5Cn%20%20Here%5C's%20the%20new%20load%20parameter%20for%20your%20%3Ccode%3EGUI%3C%2Fcode%3E%5C's%20constructor%3A%5Cn%5Cn%20%20%3Ctextarea%20id%3D%22dg-new-constructor%22%3E%3C%2Ftextarea%3E%5Cn%5Cn%20%20%3Cdiv%20id%3D%22dg-save-locally%22%3E%5Cn%5Cn%20%20%20%20%3Cinput%20id%3D%22dg-local-storage%22%20type%3D%22checkbox%22%2F%3E%20Automatically%20save%5Cn%20%20%20%20values%20to%20%3Ccode%3ElocalStorage%3C%2Fcode%3E%20on%20exit.%5Cn%5Cn%20%20%20%20%3Cdiv%20id%3D%22dg-local-explain%22%3EThe%20values%20saved%20to%20%3Ccode%3ElocalStorage%3C%2Fcode%3E%20will%5Cn%20%20%20%20%20%20override%20those%20passed%20to%20%3Ccode%3Edat.GUI%3C%2Fcode%3E%5C's%20constructor.%20This%20makes%20it%5Cn%20%20%20%20%20%20easier%20to%20work%20incrementally%2C%20but%20%3Ccode%3ElocalStorage%3C%2Fcode%3E%20is%20fragile%2C%5Cn%20%20%20%20%20%20and%20your%20friends%20may%20not%20see%20the%20same%20values%20you%20do.%5Cn%20%20%20%20%20%20%5Cn%20%20%20%20%3C%2Fdiv%3E%5Cn%20%20%20%20%5Cn%20%20%3C%2Fdiv%3E%5Cn%5Cn%3C%2Fdiv%3E'%2C%0A%22.dg%20%7B%5Cn%20%20%2F**%20Clear%20list%20styles%20*%2F%5Cn%20%20%2F*%20Auto-place%20container%20*%2F%5Cn%20%20%2F*%20Auto-placed%20GUI's%20*%2F%5Cn%20%20%2F*%20Line%20items%20that%20don't%20contain%20folders.%20*%2F%5Cn%20%20%2F**%20Folder%20names%20*%2F%5Cn%20%20%2F**%20Hides%20closed%20items%20*%2F%5Cn%20%20%2F**%20Controller%20row%20*%2F%5Cn%20%20%2F**%20Name-half%20(left)%20*%2F%5Cn%20%20%2F**%20Controller-half%20(right)%20*%2F%5Cn%20%20%2F**%20Controller%20placement%20*%2F%5Cn%20%20%2F**%20Shorter%20number%20boxes%20when%20slider%20is%20present.%20*%2F%5Cn%20%20%2F**%20Ensure%20the%20entire%20boolean%20and%20function%20row%20shows%20a%20hand%20*%2F%20%7D%5Cn%20%20.dg%20ul%20%7B%5Cn%20%20%20%20list-style%3A%20none%3B%5Cn%20%20%20%20margin%3A%200%3B%5Cn%20%20%20%20padding%3A%200%3B%5Cn%20%20%20%20width%3A%20100%25%3B%5Cn%20%20%20%20clear%3A%20both%3B%20%7D%5Cn%20%20.dg.ac%20%7B%5Cn%20%20%20%20position%3A%20fixed%3B%5Cn%20%20%20%20top%3A%200%3B%5Cn%20%20%20%20left%3A%200%3B%5Cn%20%20%20%20right%3A%200%3B%5Cn%20%20%20%20height%3A%200%3B%5Cn%20%20%20%20z-index%3A%200%3B%20%7D%5Cn%20%20.dg%3Anot(.ac)%20.main%20%7B%5Cn%20%20%20%20%2F**%20Exclude%20mains%20in%20ac%20so%20that%20we%20don't%20hide%20close%20button%20*%2F%5Cn%20%20%20%20overflow%3A%20hidden%3B%20%7D%5Cn%20%20.dg.main%20%7B%5Cn%20%20%20%20-webkit-transition%3A%20opacity%200.1s%20linear%3B%5Cn%20%20%20%20-o-transition%3A%20opacity%200.1s%20linear%3B%5Cn%20%20%20%20-moz-transition%3A%20opacity%200.1s%20linear%3B%5Cn%20%20%20%20transition%3A%20opacity%200.1s%20linear%3B%20%7D%5Cn%20%20%20%20.dg.main.taller-than-window%20%7B%5Cn%20%20%20%20%20%20overflow-y%3A%20auto%3B%20%7D%5Cn%20%20%20%20%20%20.dg.main.taller-than-window%20.close-button%20%7B%5Cn%20%20%20%20%20%20%20%20opacity%3A%201%3B%5Cn%20%20%20%20%20%20%20%20%2F*%20TODO%2C%20these%20are%20style%20notes%20*%2F%5Cn%20%20%20%20%20%20%20%20margin-top%3A%20-1px%3B%5Cn%20%20%20%20%20%20%20%20border-top%3A%201px%20solid%20%232c2c2c%3B%20%7D%5Cn%20%20%20%20.dg.main%20ul.closed%20.close-button%20%7B%5Cn%20%20%20%20%20%20opacity%3A%201%20!important%3B%20%7D%5Cn%20%20%20%20.dg.main%3Ahover%20.close-button%2C%5Cn%20%20%20%20.dg.main%20.close-button.drag%20%7B%5Cn%20%20%20%20%20%20opacity%3A%201%3B%20%7D%5Cn%20%20%20%20.dg.main%20.close-button%20%7B%5Cn%20%20%20%20%20%20%2F*opacity%3A%200%3B*%2F%5Cn%20%20%20%20%20%20-webkit-transition%3A%20opacity%200.1s%20linear%3B%5Cn%20%20%20%20%20%20-o-transition%3A%20opacity%200.1s%20linear%3B%5Cn%20%20%20%20%20%20-moz-transition%3A%20opacity%200.1s%20linear%3B%5Cn%20%20%20%20%20%20transition%3A%20opacity%200.1s%20linear%3B%5Cn%20%20%20%20%20%20border%3A%200%3B%5Cn%20%20%20%20%20%20position%3A%20absolute%3B%5Cn%20%20%20%20%20%20line-height%3A%2019px%3B%5Cn%20%20%20%20%20%20height%3A%2020px%3B%5Cn%20%20%20%20%20%20%2F*%20TODO%2C%20these%20are%20style%20notes%20*%2F%5Cn%20%20%20%20%20%20cursor%3A%20pointer%3B%5Cn%20%20%20%20%20%20text-align%3A%20center%3B%5Cn%20%20%20%20%20%20background-color%3A%20%23000%3B%20%7D%5Cn%20%20%20%20%20%20.dg.main%20.close-button%3Ahover%20%7B%5Cn%20%20%20%20%20%20%20%20background-color%3A%20%23111%3B%20%7D%5Cn%20%20.dg.a%20%7B%5Cn%20%20%20%20float%3A%20right%3B%5Cn%20%20%20%20margin-right%3A%2015px%3B%5Cn%20%20%20%20overflow-x%3A%20hidden%3B%20%7D%5Cn%20%20%20%20.dg.a.has-save%20%3E%20ul%20%7B%5Cn%20%20%20%20%20%20margin-top%3A%2027px%3B%20%7D%5Cn%20%20%20%20%20%20.dg.a.has-save%20%3E%20ul.closed%20%7B%5Cn%20%20%20%20%20%20%20%20margin-top%3A%200%3B%20%7D%5Cn%20%20%20%20.dg.a%20.save-row%20%7B%5Cn%20%20%20%20%20%20position%3A%20fixed%3B%5Cn%20%20%20%20%20%20top%3A%200%3B%5Cn%20%20%20%20%20%20z-index%3A%201002%3B%20%7D%5Cn%20%20.dg%20li%20%7B%5Cn%20%20%20%20-webkit-transition%3A%20height%200.1s%20ease-out%3B%5Cn%20%20%20%20-o-transition%3A%20height%200.1s%20ease-out%3B%5Cn%20%20%20%20-moz-transition%3A%20height%200.1s%20ease-out%3B%5Cn%20%20%20%20transition%3A%20height%200.1s%20ease-out%3B%20%7D%5Cn%20%20.dg%20li%3Anot(.folder)%20%7B%5Cn%20%20%20%20cursor%3A%20auto%3B%5Cn%20%20%20%20height%3A%2027px%3B%5Cn%20%20%20%20line-height%3A%2027px%3B%5Cn%20%20%20%20overflow%3A%20hidden%3B%5Cn%20%20%20%20padding%3A%200%204px%200%205px%3B%20%7D%5Cn%20%20.dg%20li.folder%20%7B%5Cn%20%20%20%20padding%3A%200%3B%5Cn%20%20%20%20border-left%3A%204px%20solid%20rgba(0%2C%200%2C%200%2C%200)%3B%20%7D%5Cn%20%20.dg%20li.title%20%7B%5Cn%20%20%20%20cursor%3A%20pointer%3B%5Cn%20%20%20%20margin-left%3A%20-4px%3B%20%7D%5Cn%20%20.dg%20.closed%20li%3Anot(.title)%2C%5Cn%20%20.dg%20.closed%20ul%20li%2C%5Cn%20%20.dg%20.closed%20ul%20li%20%3E%20*%20%7B%5Cn%20%20%20%20height%3A%200%3B%5Cn%20%20%20%20overflow%3A%20hidden%3B%5Cn%20%20%20%20border%3A%200%3B%20%7D%5Cn%20%20.dg%20.cr%20%7B%5Cn%20%20%20%20clear%3A%20both%3B%5Cn%20%20%20%20padding-left%3A%203px%3B%5Cn%20%20%20%20height%3A%2027px%3B%20%7D%5Cn%20%20.dg%20.property-name%20%7B%5Cn%20%20%20%20cursor%3A%20default%3B%5Cn%20%20%20%20float%3A%20left%3B%5Cn%20%20%20%20clear%3A%20left%3B%5Cn%20%20%20%20width%3A%2040%25%3B%5Cn%20%20%20%20overflow%3A%20hidden%3B%5Cn%20%20%20%20text-overflow%3A%20ellipsis%3B%20%7D%5Cn%20%20.dg%20.c%20%7B%5Cn%20%20%20%20float%3A%20left%3B%5Cn%20%20%20%20width%3A%2060%25%3B%20%7D%5Cn%20%20.dg%20.c%20input%5Btype%3Dtext%5D%20%7B%5Cn%20%20%20%20border%3A%200%3B%5Cn%20%20%20%20margin-top%3A%204px%3B%5Cn%20%20%20%20padding%3A%203px%3B%5Cn%20%20%20%20width%3A%20100%25%3B%5Cn%20%20%20%20float%3A%20right%3B%20%7D%5Cn%20%20.dg%20.has-slider%20input%5Btype%3Dtext%5D%20%7B%5Cn%20%20%20%20width%3A%2030%25%3B%5Cn%20%20%20%20%2F*display%3A%20none%3B*%2F%5Cn%20%20%20%20margin-left%3A%200%3B%20%7D%5Cn%20%20.dg%20.slider%20%7B%5Cn%20%20%20%20float%3A%20left%3B%5Cn%20%20%20%20width%3A%2066%25%3B%5Cn%20%20%20%20margin-left%3A%20-5px%3B%5Cn%20%20%20%20margin-right%3A%200%3B%5Cn%20%20%20%20height%3A%2019px%3B%5Cn%20%20%20%20margin-top%3A%204px%3B%20%7D%5Cn%20%20.dg%20.slider-fg%20%7B%5Cn%20%20%20%20height%3A%20100%25%3B%20%7D%5Cn%20%20.dg%20.c%20input%5Btype%3Dcheckbox%5D%20%7B%5Cn%20%20%20%20margin-top%3A%209px%3B%20%7D%5Cn%20%20.dg%20.c%20select%20%7B%5Cn%20%20%20%20margin-top%3A%205px%3B%20%7D%5Cn%20%20.dg%20.cr.function%2C%5Cn%20%20.dg%20.cr.function%20.property-name%2C%5Cn%20%20.dg%20.cr.function%20*%2C%5Cn%20%20.dg%20.cr.boolean%2C%5Cn%20%20.dg%20.cr.boolean%20*%20%7B%5Cn%20%20%20%20cursor%3A%20pointer%3B%20%7D%5Cn%20%20.dg%20.selector%20%7B%5Cn%20%20%20%20display%3A%20none%3B%5Cn%20%20%20%20position%3A%20absolute%3B%5Cn%20%20%20%20margin-left%3A%20-9px%3B%5Cn%20%20%20%20margin-top%3A%2023px%3B%5Cn%20%20%20%20z-index%3A%2010%3B%20%7D%5Cn%20%20.dg%20.c%3Ahover%20.selector%2C%5Cn%20%20.dg%20.selector.drag%20%7B%5Cn%20%20%20%20display%3A%20block%3B%20%7D%5Cn%20%20.dg%20li.save-row%20%7B%5Cn%20%20%20%20padding%3A%200%3B%20%7D%5Cn%20%20%20%20.dg%20li.save-row%20.button%20%7B%5Cn%20%20%20%20%20%20display%3A%20inline-block%3B%5Cn%20%20%20%20%20%20padding%3A%200px%206px%3B%20%7D%5Cn%20%20.dg.dialogue%20%7B%5Cn%20%20%20%20background-color%3A%20%23222%3B%5Cn%20%20%20%20width%3A%20460px%3B%5Cn%20%20%20%20padding%3A%2015px%3B%5Cn%20%20%20%20font-size%3A%2013px%3B%5Cn%20%20%20%20line-height%3A%2015px%3B%20%7D%5Cn%5Cn%2F*%20TODO%20Separate%20style%20and%20structure%20*%2F%5Cn%23dg-new-constructor%20%7B%5Cn%20%20padding%3A%2010px%3B%5Cn%20%20color%3A%20%23222%3B%5Cn%20%20font-family%3A%20Monaco%2C%20monospace%3B%5Cn%20%20font-size%3A%2010px%3B%5Cn%20%20border%3A%200%3B%5Cn%20%20resize%3A%20none%3B%5Cn%20%20box-shadow%3A%20inset%201px%201px%201px%20%23888%3B%5Cn%20%20word-wrap%3A%20break-word%3B%5Cn%20%20margin%3A%2012px%200%3B%5Cn%20%20display%3A%20block%3B%5Cn%20%20width%3A%20440px%3B%5Cn%20%20overflow-y%3A%20scroll%3B%5Cn%20%20height%3A%20100px%3B%5Cn%20%20position%3A%20relative%3B%20%7D%5Cn%5Cn%23dg-local-explain%20%7B%5Cn%20%20display%3A%20none%3B%5Cn%20%20font-size%3A%2011px%3B%5Cn%20%20line-height%3A%2017px%3B%5Cn%20%20border-radius%3A%203px%3B%5Cn%20%20background-color%3A%20%23333%3B%5Cn%20%20padding%3A%208px%3B%5Cn%20%20margin-top%3A%2010px%3B%20%7D%5Cn%20%20%23dg-local-explain%20code%20%7B%5Cn%20%20%20%20font-size%3A%2010px%3B%20%7D%5Cn%5Cn%23dat-gui-save-locally%20%7B%5Cn%20%20display%3A%20none%3B%20%7D%5Cn%5Cn%2F**%20Main%20type%20*%2F%5Cn.dg%20%7B%5Cn%20%20color%3A%20%23eee%3B%5Cn%20%20font%3A%2011px%20'Lucida%20Grande'%2C%20sans-serif%3B%5Cn%20%20text-shadow%3A%200%20-1px%200%20%23111%3B%5Cn%20%20%2F**%20Auto%20place%20*%2F%5Cn%20%20%2F*%20Controller%20row%2C%20%3Cli%3E%20*%2F%5Cn%20%20%2F**%20Controllers%20*%2F%20%7D%5Cn%20%20.dg.main%20%7B%5Cn%20%20%20%20%2F**%20Scrollbar%20*%2F%20%7D%5Cn%20%20%20%20.dg.main%3A%3A-webkit-scrollbar%20%7B%5Cn%20%20%20%20%20%20width%3A%205px%3B%5Cn%20%20%20%20%20%20background%3A%20%231a1a1a%3B%20%7D%5Cn%20%20%20%20.dg.main%3A%3A-webkit-scrollbar-corner%20%7B%5Cn%20%20%20%20%20%20height%3A%200%3B%5Cn%20%20%20%20%20%20display%3A%20none%3B%20%7D%5Cn%20%20%20%20.dg.main%3A%3A-webkit-scrollbar-thumb%20%7B%5Cn%20%20%20%20%20%20border-radius%3A%205px%3B%5Cn%20%20%20%20%20%20background%3A%20%23676767%3B%20%7D%5Cn%20%20.dg%20li%3Anot(.folder)%20%7B%5Cn%20%20%20%20background%3A%20%231a1a1a%3B%5Cn%20%20%20%20border-bottom%3A%201px%20solid%20%232c2c2c%3B%20%7D%5Cn%20%20.dg%20li.save-row%20%7B%5Cn%20%20%20%20line-height%3A%2025px%3B%5Cn%20%20%20%20background%3A%20%23dad5cb%3B%5Cn%20%20%20%20border%3A%200%3B%20%7D%5Cn%20%20%20%20.dg%20li.save-row%20select%20%7B%5Cn%20%20%20%20%20%20margin-left%3A%205px%3B%5Cn%20%20%20%20%20%20width%3A%20108px%3B%20%7D%5Cn%20%20%20%20.dg%20li.save-row%20.button%20%7B%5Cn%20%20%20%20%20%20margin-left%3A%205px%3B%5Cn%20%20%20%20%20%20margin-top%3A%201px%3B%5Cn%20%20%20%20%20%20border-radius%3A%202px%3B%5Cn%20%20%20%20%20%20font-size%3A%209px%3B%5Cn%20%20%20%20%20%20line-height%3A%207px%3B%5Cn%20%20%20%20%20%20padding%3A%204px%204px%205px%204px%3B%5Cn%20%20%20%20%20%20background%3A%20%23c5bdad%3B%5Cn%20%20%20%20%20%20color%3A%20%23fff%3B%5Cn%20%20%20%20%20%20text-shadow%3A%200%201px%200%20%23b0a58f%3B%5Cn%20%20%20%20%20%20box-shadow%3A%200%20-1px%200%20%23b0a58f%3B%5Cn%20%20%20%20%20%20cursor%3A%20pointer%3B%20%7D%5Cn%20%20%20%20%20%20.dg%20li.save-row%20.button.gears%20%7B%5Cn%20%20%20%20%20%20%20%20background%3A%20%23c5bdad%20url(data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAAsAAAANCAYAAAB%2F9ZQ7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAQJJREFUeNpiYKAU%2FP%2F%2FPwGIC%2FApCABiBSAW%2BI8AClAcgKxQ4T9hoMAEUrxx2QSGN6%2BegDX%2B%2FvWT4e7N82AMYoPAx%2FevwWoYoSYbACX2s7KxCxzcsezDh3evFoDEBYTEEqycggWAzA9AuUSQQgeYPa9fPv6%2FYWm%2FAcx5IPb7ty%2Ffw%2BQZblw67vDs8R0YHyQhgObx%2ByAJkBqmG5dPPDh1aPOGR%2FeugW0G4vlIoTIfyFcA%2BQekhhHJhPdQxbiAIguMBTQZrPD7108M6roWYDFQiIAAv6Aow%2F1bFwXgis%2Bf2LUAynwoIaNcz8XNx3Dl7MEJUDGQpx9gtQ8YCueB%2BD26OECAAQDadt7e46D42QAAAABJRU5ErkJggg%3D%3D)%202px%201px%20no-repeat%3B%5Cn%20%20%20%20%20%20%20%20height%3A%207px%3B%5Cn%20%20%20%20%20%20%20%20width%3A%208px%3B%20%7D%5Cn%20%20%20%20%20%20.dg%20li.save-row%20.button%3Ahover%20%7B%5Cn%20%20%20%20%20%20%20%20background-color%3A%20%23bab19e%3B%5Cn%20%20%20%20%20%20%20%20box-shadow%3A%200%20-1px%200%20%23b0a58f%3B%20%7D%5Cn%20%20.dg%20li.folder%20%7B%5Cn%20%20%20%20border-bottom%3A%200%3B%20%7D%5Cn%20%20.dg%20li.title%20%7B%5Cn%20%20%20%20padding-left%3A%2016px%3B%5Cn%20%20%20%20background%3A%20black%20url(data%3Aimage%2Fgif%3Bbase64%2CR0lGODlhBQAFAJEAAP%2F%2F%2F%2FPz8%2F%2F%2F%2F%2F%2F%2F%2FyH5BAEAAAIALAAAAAAFAAUAAAIIlI%2BhKgFxoCgAOw%3D%3D)%206px%2010px%20no-repeat%3B%5Cn%20%20%20%20cursor%3A%20pointer%3B%5Cn%20%20%20%20border-bottom%3A%201px%20solid%20rgba(255%2C%20255%2C%20255%2C%200.2)%3B%20%7D%5Cn%20%20.dg%20.closed%20li.title%20%7B%5Cn%20%20%20%20background-image%3A%20url(data%3Aimage%2Fgif%3Bbase64%2CR0lGODlhBQAFAJEAAP%2F%2F%2F%2FPz8%2F%2F%2F%2F%2F%2F%2F%2FyH5BAEAAAIALAAAAAAFAAUAAAIIlGIWqMCbWAEAOw%3D%3D)%3B%20%7D%5Cn%20%20.dg%20.cr.boolean%20%7B%5Cn%20%20%20%20border-left%3A%203px%20solid%20%23806787%3B%20%7D%5Cn%20%20.dg%20.cr.function%20%7B%5Cn%20%20%20%20border-left%3A%203px%20solid%20%23e61d5f%3B%20%7D%5Cn%20%20.dg%20.cr.number%20%7B%5Cn%20%20%20%20border-left%3A%203px%20solid%20%232fa1d6%3B%20%7D%5Cn%20%20%20%20.dg%20.cr.number%20input%5Btype%3Dtext%5D%20%7B%5Cn%20%20%20%20%20%20color%3A%20%232fa1d6%3B%20%7D%5Cn%20%20.dg%20.cr.string%20%7B%5Cn%20%20%20%20border-left%3A%203px%20solid%20%231ed36f%3B%20%7D%5Cn%20%20%20%20.dg%20.cr.string%20input%5Btype%3Dtext%5D%20%7B%5Cn%20%20%20%20%20%20color%3A%20%231ed36f%3B%20%7D%5Cn%20%20.dg%20.cr.function%3Ahover%2C%20.dg%20.cr.boolean%3Ahover%20%7B%5Cn%20%20%20%20background%3A%20%23111%3B%20%7D%5Cn%20%20.dg%20.c%20input%5Btype%3Dtext%5D%20%7B%5Cn%20%20%20%20background%3A%20%23303030%3B%5Cn%20%20%20%20outline%3A%20none%3B%20%7D%5Cn%20%20%20%20.dg%20.c%20input%5Btype%3Dtext%5D%3Ahover%20%7B%5Cn%20%20%20%20%20%20background%3A%20%233c3c3c%3B%20%7D%5Cn%20%20%20%20.dg%20.c%20input%5Btype%3Dtext%5D%3Afocus%20%7B%5Cn%20%20%20%20%20%20background%3A%20%23494949%3B%5Cn%20%20%20%20%20%20color%3A%20%23fff%3B%20%7D%5Cn%20%20.dg%20.c%20.slider%20%7B%5Cn%20%20%20%20background%3A%20%23303030%3B%5Cn%20%20%20%20cursor%3A%20ew-resize%3B%20%7D%5Cn%20%20.dg%20.c%20.slider-fg%20%7B%5Cn%20%20%20%20background%3A%20%232fa1d6%3B%20%7D%5Cn%20%20.dg%20.c%20.slider%3Ahover%20%7B%5Cn%20%20%20%20background%3A%20%233c3c3c%3B%20%7D%5Cn%20%20%20%20.dg%20.c%20.slider%3Ahover%20.slider-fg%20%7B%5Cn%20%20%20%20%20%20background%3A%20%2344abda%3B%20%7D%5Cn%22%2C%0Adat.controllers.factory%3Dfunction(e%2Ca%2Cb%2Cd%2Cf%2Cc%2Cp)%7Breturn%20function(k%2Cl%2Cq%2Cn)%7Bvar%20r%3Dk%5Bl%5D%3Bif(p.isArray(q)%7C%7Cp.isObject(q))return%20new%20e(k%2Cl%2Cq)%3Bif(p.isNumber(r))return%20p.isNumber(q)%26%26p.isNumber(n)%3Fnew%20b(k%2Cl%2Cq%2Cn)%3Anew%20a(k%2Cl%2C%7Bmin%3Aq%2Cmax%3An%7D)%3Bif(p.isString(r))return%20new%20d(k%2Cl)%3Bif(p.isFunction(r))return%20new%20f(k%2Cl%2C%22%22)%3Bif(p.isBoolean(r))return%20new%20c(k%2Cl)%7D%7D(dat.controllers.OptionController%2Cdat.controllers.NumberControllerBox%2Cdat.controllers.NumberControllerSlider%2Cdat.controllers.StringController%3Dfunction(e%2Ca%2Cb)%7Bvar%20d%3D%0Afunction(b%2Cc)%7Bfunction%20e()%7Bk.setValue(k.__input.value)%7Dd.superclass.call(this%2Cb%2Cc)%3Bvar%20k%3Dthis%3Bthis.__input%3Ddocument.createElement(%22input%22)%3Bthis.__input.setAttribute(%22type%22%2C%22text%22)%3Ba.bind(this.__input%2C%22keyup%22%2Ce)%3Ba.bind(this.__input%2C%22change%22%2Ce)%3Ba.bind(this.__input%2C%22blur%22%2Cfunction()%7Bk.__onFinishChange%26%26k.__onFinishChange.call(k%2Ck.getValue())%7D)%3Ba.bind(this.__input%2C%22keydown%22%2Cfunction(a)%7B13%3D%3D%3Da.keyCode%26%26this.blur()%7D)%3Bthis.updateDisplay()%3Bthis.domElement.appendChild(this.__input)%7D%3Bd.superclass%3De%3Bb.extend(d.prototype%2C%0Ae.prototype%2C%7BupdateDisplay%3Afunction()%7Ba.isActive(this.__input)%7C%7C(this.__input.value%3Dthis.getValue())%3Breturn%20d.superclass.prototype.updateDisplay.call(this)%7D%7D)%3Breturn%20d%7D(dat.controllers.Controller%2Cdat.dom.dom%2Cdat.utils.common)%2Cdat.controllers.FunctionController%2Cdat.controllers.BooleanController%2Cdat.utils.common)%2Cdat.controllers.Controller%2Cdat.controllers.BooleanController%2Cdat.controllers.FunctionController%2Cdat.controllers.NumberControllerBox%2Cdat.controllers.NumberControllerSlider%2Cdat.controllers.OptionController%2C%0Adat.controllers.ColorController%3Dfunction(e%2Ca%2Cb%2Cd%2Cf)%7Bfunction%20c(a%2Cb%2Cd%2Cc)%7Ba.style.background%3D%22%22%3Bf.each(l%2Cfunction(e)%7Ba.style.cssText%2B%3D%22background%3A%20%22%2Be%2B%22linear-gradient(%22%2Bb%2B%22%2C%20%22%2Bd%2B%22%200%25%2C%20%22%2Bc%2B%22%20100%25)%3B%20%22%7D)%7Dfunction%20p(a)%7Ba.style.background%3D%22%22%3Ba.style.cssText%2B%3D%22background%3A%20-moz-linear-gradient(top%2C%20%20%23ff0000%200%25%2C%20%23ff00ff%2017%25%2C%20%230000ff%2034%25%2C%20%2300ffff%2050%25%2C%20%2300ff00%2067%25%2C%20%23ffff00%2084%25%2C%20%23ff0000%20100%25)%3B%22%3Ba.style.cssText%2B%3D%22background%3A%20-webkit-linear-gradient(top%2C%20%20%23ff0000%200%25%2C%23ff00ff%2017%25%2C%230000ff%2034%25%2C%2300ffff%2050%25%2C%2300ff00%2067%25%2C%23ffff00%2084%25%2C%23ff0000%20100%25)%3B%22%3B%0Aa.style.cssText%2B%3D%22background%3A%20-o-linear-gradient(top%2C%20%20%23ff0000%200%25%2C%23ff00ff%2017%25%2C%230000ff%2034%25%2C%2300ffff%2050%25%2C%2300ff00%2067%25%2C%23ffff00%2084%25%2C%23ff0000%20100%25)%3B%22%3Ba.style.cssText%2B%3D%22background%3A%20-ms-linear-gradient(top%2C%20%20%23ff0000%200%25%2C%23ff00ff%2017%25%2C%230000ff%2034%25%2C%2300ffff%2050%25%2C%2300ff00%2067%25%2C%23ffff00%2084%25%2C%23ff0000%20100%25)%3B%22%3Ba.style.cssText%2B%3D%22background%3A%20linear-gradient(top%2C%20%20%23ff0000%200%25%2C%23ff00ff%2017%25%2C%230000ff%2034%25%2C%2300ffff%2050%25%2C%2300ff00%2067%25%2C%23ffff00%2084%25%2C%23ff0000%20100%25)%3B%22%7Dvar%20k%3Dfunction(e%2Cn)%7Bfunction%20r(b)%7Bt(b)%3Ba.bind(window%2C%22mousemove%22%2Ct)%3Ba.bind(window%2C%0A%22mouseup%22%2Cl)%7Dfunction%20l()%7Ba.unbind(window%2C%22mousemove%22%2Ct)%3Ba.unbind(window%2C%22mouseup%22%2Cl)%7Dfunction%20g()%7Bvar%20a%3Dd(this.value)%3B!1!%3D%3Da%3F(s.__color.__state%3Da%2Cs.setValue(s.__color.toOriginal()))%3Athis.value%3Ds.__color.toString()%7Dfunction%20h()%7Ba.unbind(window%2C%22mousemove%22%2Cu)%3Ba.unbind(window%2C%22mouseup%22%2Ch)%7Dfunction%20t(b)%7Bb.preventDefault()%3Bvar%20d%3Da.getWidth(s.__saturation_field)%2Cc%3Da.getOffset(s.__saturation_field)%2Ce%3D(b.clientX-c.left%2Bdocument.body.scrollLeft)%2Fd%3Bb%3D1-(b.clientY-c.top%2Bdocument.body.scrollTop)%2Fd%3B1%3Cb%3Fb%3D1%3A0%3E%0Ab%26%26(b%3D0)%3B1%3Ce%3Fe%3D1%3A0%3Ee%26%26(e%3D0)%3Bs.__color.v%3Db%3Bs.__color.s%3De%3Bs.setValue(s.__color.toOriginal())%3Breturn!1%7Dfunction%20u(b)%7Bb.preventDefault()%3Bvar%20d%3Da.getHeight(s.__hue_field)%2Cc%3Da.getOffset(s.__hue_field)%3Bb%3D1-(b.clientY-c.top%2Bdocument.body.scrollTop)%2Fd%3B1%3Cb%3Fb%3D1%3A0%3Eb%26%26(b%3D0)%3Bs.__color.h%3D360*b%3Bs.setValue(s.__color.toOriginal())%3Breturn!1%7Dk.superclass.call(this%2Ce%2Cn)%3Bthis.__color%3Dnew%20b(this.getValue())%3Bthis.__temp%3Dnew%20b(0)%3Bvar%20s%3Dthis%3Bthis.domElement%3Ddocument.createElement(%22div%22)%3Ba.makeSelectable(this.domElement%2C!1)%3B%0Athis.__selector%3Ddocument.createElement(%22div%22)%3Bthis.__selector.className%3D%22selector%22%3Bthis.__saturation_field%3Ddocument.createElement(%22div%22)%3Bthis.__saturation_field.className%3D%22saturation-field%22%3Bthis.__field_knob%3Ddocument.createElement(%22div%22)%3Bthis.__field_knob.className%3D%22field-knob%22%3Bthis.__field_knob_border%3D%222px%20solid%20%22%3Bthis.__hue_knob%3Ddocument.createElement(%22div%22)%3Bthis.__hue_knob.className%3D%22hue-knob%22%3Bthis.__hue_field%3Ddocument.createElement(%22div%22)%3Bthis.__hue_field.className%3D%22hue-field%22%3Bthis.__input%3Ddocument.createElement(%22input%22)%3B%0Athis.__input.type%3D%22text%22%3Bthis.__input_textShadow%3D%220%201px%201px%20%22%3Ba.bind(this.__input%2C%22keydown%22%2Cfunction(a)%7B13%3D%3D%3Da.keyCode%26%26g.call(this)%7D)%3Ba.bind(this.__input%2C%22blur%22%2Cg)%3Ba.bind(this.__selector%2C%22mousedown%22%2Cfunction(b)%7Ba.addClass(this%2C%22drag%22).bind(window%2C%22mouseup%22%2Cfunction(b)%7Ba.removeClass(s.__selector%2C%22drag%22)%7D)%7D)%3Bvar%20v%3Ddocument.createElement(%22div%22)%3Bf.extend(this.__selector.style%2C%7Bwidth%3A%22122px%22%2Cheight%3A%22102px%22%2Cpadding%3A%223px%22%2CbackgroundColor%3A%22%23222%22%2CboxShadow%3A%220px%201px%203px%20rgba(0%2C0%2C0%2C0.3)%22%7D)%3Bf.extend(this.__field_knob.style%2C%0A%7Bposition%3A%22absolute%22%2Cwidth%3A%2212px%22%2Cheight%3A%2212px%22%2Cborder%3Athis.__field_knob_border%2B(0.5%3Ethis.__color.v%3F%22%23fff%22%3A%22%23000%22)%2CboxShadow%3A%220px%201px%203px%20rgba(0%2C0%2C0%2C0.5)%22%2CborderRadius%3A%2212px%22%2CzIndex%3A1%7D)%3Bf.extend(this.__hue_knob.style%2C%7Bposition%3A%22absolute%22%2Cwidth%3A%2215px%22%2Cheight%3A%222px%22%2CborderRight%3A%224px%20solid%20%23fff%22%2CzIndex%3A1%7D)%3Bf.extend(this.__saturation_field.style%2C%7Bwidth%3A%22100px%22%2Cheight%3A%22100px%22%2Cborder%3A%221px%20solid%20%23555%22%2CmarginRight%3A%223px%22%2Cdisplay%3A%22inline-block%22%2Ccursor%3A%22pointer%22%7D)%3Bf.extend(v.style%2C%7Bwidth%3A%22100%25%22%2Cheight%3A%22100%25%22%2C%0Abackground%3A%22none%22%7D)%3Bc(v%2C%22top%22%2C%22rgba(0%2C0%2C0%2C0)%22%2C%22%23000%22)%3Bf.extend(this.__hue_field.style%2C%7Bwidth%3A%2215px%22%2Cheight%3A%22100px%22%2Cdisplay%3A%22inline-block%22%2Cborder%3A%221px%20solid%20%23555%22%2Ccursor%3A%22ns-resize%22%7D)%3Bp(this.__hue_field)%3Bf.extend(this.__input.style%2C%7Boutline%3A%22none%22%2CtextAlign%3A%22center%22%2Ccolor%3A%22%23fff%22%2Cborder%3A0%2CfontWeight%3A%22bold%22%2CtextShadow%3Athis.__input_textShadow%2B%22rgba(0%2C0%2C0%2C0.7)%22%7D)%3Ba.bind(this.__saturation_field%2C%22mousedown%22%2Cr)%3Ba.bind(this.__field_knob%2C%22mousedown%22%2Cr)%3Ba.bind(this.__hue_field%2C%22mousedown%22%2Cfunction(b)%7Bu(b)%3Ba.bind(window%2C%0A%22mousemove%22%2Cu)%3Ba.bind(window%2C%22mouseup%22%2Ch)%7D)%3Bthis.__saturation_field.appendChild(v)%3Bthis.__selector.appendChild(this.__field_knob)%3Bthis.__selector.appendChild(this.__saturation_field)%3Bthis.__selector.appendChild(this.__hue_field)%3Bthis.__hue_field.appendChild(this.__hue_knob)%3Bthis.domElement.appendChild(this.__input)%3Bthis.domElement.appendChild(this.__selector)%3Bthis.updateDisplay()%7D%3Bk.superclass%3De%3Bf.extend(k.prototype%2Ce.prototype%2C%7BupdateDisplay%3Afunction()%7Bvar%20a%3Dd(this.getValue())%3Bif(!1!%3D%3Da)%7Bvar%20e%3D!1%3B%0Af.each(b.COMPONENTS%2Cfunction(b)%7Bif(!f.isUndefined(a%5Bb%5D)%26%26!f.isUndefined(this.__color.__state%5Bb%5D)%26%26a%5Bb%5D!%3D%3Dthis.__color.__state%5Bb%5D)return%20e%3D!0%2C%7B%7D%7D%2Cthis)%3Be%26%26f.extend(this.__color.__state%2Ca)%7Df.extend(this.__temp.__state%2Cthis.__color.__state)%3Bthis.__temp.a%3D1%3Bvar%20k%3D0.5%3Ethis.__color.v%7C%7C0.5%3Cthis.__color.s%3F255%3A0%2Cl%3D255-k%3Bf.extend(this.__field_knob.style%2C%7BmarginLeft%3A100*this.__color.s-7%2B%22px%22%2CmarginTop%3A100*(1-this.__color.v)-7%2B%22px%22%2CbackgroundColor%3Athis.__temp.toString()%2Cborder%3Athis.__field_knob_border%2B%22rgb(%22%2B%0Ak%2B%22%2C%22%2Bk%2B%22%2C%22%2Bk%2B%22)%22%7D)%3Bthis.__hue_knob.style.marginTop%3D100*(1-this.__color.h%2F360)%2B%22px%22%3Bthis.__temp.s%3D1%3Bthis.__temp.v%3D1%3Bc(this.__saturation_field%2C%22left%22%2C%22%23fff%22%2Cthis.__temp.toString())%3Bf.extend(this.__input.style%2C%7BbackgroundColor%3Athis.__input.value%3Dthis.__color.toString()%2Ccolor%3A%22rgb(%22%2Bk%2B%22%2C%22%2Bk%2B%22%2C%22%2Bk%2B%22)%22%2CtextShadow%3Athis.__input_textShadow%2B%22rgba(%22%2Bl%2B%22%2C%22%2Bl%2B%22%2C%22%2Bl%2B%22%2C.7)%22%7D)%7D%7D)%3Bvar%20l%3D%5B%22-moz-%22%2C%22-o-%22%2C%22-webkit-%22%2C%22-ms-%22%2C%22%22%5D%3Breturn%20k%7D(dat.controllers.Controller%2Cdat.dom.dom%2Cdat.color.Color%3Dfunction(e%2Ca%2Cb%2Cd)%7Bfunction%20f(a%2C%0Ab%2Cd)%7BObject.defineProperty(a%2Cb%2C%7Bget%3Afunction()%7Bif(%22RGB%22%3D%3D%3Dthis.__state.space)return%20this.__state%5Bb%5D%3Bp(this%2Cb%2Cd)%3Breturn%20this.__state%5Bb%5D%7D%2Cset%3Afunction(a)%7B%22RGB%22!%3D%3Dthis.__state.space%26%26(p(this%2Cb%2Cd)%2Cthis.__state.space%3D%22RGB%22)%3Bthis.__state%5Bb%5D%3Da%7D%7D)%7Dfunction%20c(a%2Cb)%7BObject.defineProperty(a%2Cb%2C%7Bget%3Afunction()%7Bif(%22HSV%22%3D%3D%3Dthis.__state.space)return%20this.__state%5Bb%5D%3Bk(this)%3Breturn%20this.__state%5Bb%5D%7D%2Cset%3Afunction(a)%7B%22HSV%22!%3D%3Dthis.__state.space%26%26(k(this)%2Cthis.__state.space%3D%22HSV%22)%3Bthis.__state%5Bb%5D%3Da%7D%7D)%7Dfunction%20p(b%2Cc%2Ce)%7Bif(%22HEX%22%3D%3D%3D%0Ab.__state.space)b.__state%5Bc%5D%3Da.component_from_hex(b.__state.hex%2Ce)%3Belse%20if(%22HSV%22%3D%3D%3Db.__state.space)d.extend(b.__state%2Ca.hsv_to_rgb(b.__state.h%2Cb.__state.s%2Cb.__state.v))%3Belse%20throw%22Corrupted%20color%20state%22%3B%7Dfunction%20k(b)%7Bvar%20c%3Da.rgb_to_hsv(b.r%2Cb.g%2Cb.b)%3Bd.extend(b.__state%2C%7Bs%3Ac.s%2Cv%3Ac.v%7D)%3Bd.isNaN(c.h)%3Fd.isUndefined(b.__state.h)%26%26(b.__state.h%3D0)%3Ab.__state.h%3Dc.h%7Dvar%20l%3Dfunction()%7Bthis.__state%3De.apply(this%2Carguments)%3Bif(!1%3D%3D%3Dthis.__state)throw%22Failed%20to%20interpret%20color%20arguments%22%3Bthis.__state.a%3Dthis.__state.a%7C%7C%0A1%7D%3Bl.COMPONENTS%3D%22r%20g%20b%20h%20s%20v%20hex%20a%22.split(%22%20%22)%3Bd.extend(l.prototype%2C%7BtoString%3Afunction()%7Breturn%20b(this)%7D%2CtoOriginal%3Afunction()%7Breturn%20this.__state.conversion.write(this)%7D%7D)%3Bf(l.prototype%2C%22r%22%2C2)%3Bf(l.prototype%2C%22g%22%2C1)%3Bf(l.prototype%2C%22b%22%2C0)%3Bc(l.prototype%2C%22h%22)%3Bc(l.prototype%2C%22s%22)%3Bc(l.prototype%2C%22v%22)%3BObject.defineProperty(l.prototype%2C%22a%22%2C%7Bget%3Afunction()%7Breturn%20this.__state.a%7D%2Cset%3Afunction(a)%7Bthis.__state.a%3Da%7D%7D)%3BObject.defineProperty(l.prototype%2C%22hex%22%2C%7Bget%3Afunction()%7B%22HEX%22!%3D%3D!this.__state.space%26%26(this.__state.hex%3D%0Aa.rgb_to_hex(this.r%2Cthis.g%2Cthis.b))%3Breturn%20this.__state.hex%7D%2Cset%3Afunction(a)%7Bthis.__state.space%3D%22HEX%22%3Bthis.__state.hex%3Da%7D%7D)%3Breturn%20l%7D(dat.color.interpret%2Cdat.color.math%3Dfunction()%7Bvar%20e%3Breturn%7Bhsv_to_rgb%3Afunction(a%2Cb%2Cd)%7Bvar%20e%3Da%2F60-Math.floor(a%2F60)%2Cc%3Dd*(1-b)%2Cp%3Dd*(1-e*b)%3Bb%3Dd*(1-(1-e)*b)%3Ba%3D%5B%5Bd%2Cb%2Cc%5D%2C%5Bp%2Cd%2Cc%5D%2C%5Bc%2Cd%2Cb%5D%2C%5Bc%2Cp%2Cd%5D%2C%5Bb%2Cc%2Cd%5D%2C%5Bd%2Cc%2Cp%5D%5D%5BMath.floor(a%2F60)%256%5D%3Breturn%7Br%3A255*a%5B0%5D%2Cg%3A255*a%5B1%5D%2Cb%3A255*a%5B2%5D%7D%7D%2Crgb_to_hsv%3Afunction(a%2Cb%2Cd)%7Bvar%20e%3DMath.min(a%2Cb%2Cd)%2Cc%3DMath.max(a%2Cb%2Cd)%2Ce%3Dc-e%3Bif(0%3D%3Dc)return%7Bh%3ANaN%2Cs%3A0%2Cv%3A0%7D%3B%0Aa%3D(a%3D%3Dc%3F(b-d)%2Fe%3Ab%3D%3Dc%3F2%2B(d-a)%2Fe%3A4%2B(a-b)%2Fe)%2F6%3B0%3Ea%26%26(a%2B%3D1)%3Breturn%7Bh%3A360*a%2Cs%3Ae%2Fc%2Cv%3Ac%2F255%7D%7D%2Crgb_to_hex%3Afunction(a%2Cb%2Cd)%7Ba%3Dthis.hex_with_component(0%2C2%2Ca)%3Ba%3Dthis.hex_with_component(a%2C1%2Cb)%3Breturn%20a%3Dthis.hex_with_component(a%2C0%2Cd)%7D%2Ccomponent_from_hex%3Afunction(a%2Cb)%7Breturn%20a%3E%3E8*b%26255%7D%2Chex_with_component%3Afunction(a%2Cb%2Cd)%7Breturn%20d%3C%3C(e%3D8*b)%7Ca%26~(255%3C%3Ce)%7D%7D%7D()%2Cdat.color.toString%2Cdat.utils.common)%2Cdat.color.interpret%2Cdat.utils.common)%2Cdat.utils.requestAnimationFrame%3Dfunction()%7Breturn%20window.webkitRequestAnimationFrame%7C%7C%0Awindow.mozRequestAnimationFrame%7C%7Cwindow.oRequestAnimationFrame%7C%7Cwindow.msRequestAnimationFrame%7C%7Cfunction(e%2Ca)%7Bwindow.setTimeout(e%2C1E3%2F60)%7D%7D()%2Cdat.dom.CenteredDiv%3Dfunction(e%2Ca)%7Bvar%20b%3Dfunction()%7Bthis.backgroundElement%3Ddocument.createElement(%22div%22)%3Ba.extend(this.backgroundElement.style%2C%7BbackgroundColor%3A%22rgba(0%2C0%2C0%2C0.8)%22%2Ctop%3A0%2Cleft%3A0%2Cdisplay%3A%22none%22%2CzIndex%3A%221000%22%2Copacity%3A0%2CWebkitTransition%3A%22opacity%200.2s%20linear%22%7D)%3Be.makeFullscreen(this.backgroundElement)%3Bthis.backgroundElement.style.position%3D%22fixed%22%3Bthis.domElement%3D%0Adocument.createElement(%22div%22)%3Ba.extend(this.domElement.style%2C%7Bposition%3A%22fixed%22%2Cdisplay%3A%22none%22%2CzIndex%3A%221001%22%2Copacity%3A0%2CWebkitTransition%3A%22-webkit-transform%200.2s%20ease-out%2C%20opacity%200.2s%20linear%22%7D)%3Bdocument.body.appendChild(this.backgroundElement)%3Bdocument.body.appendChild(this.domElement)%3Bvar%20b%3Dthis%3Be.bind(this.backgroundElement%2C%22click%22%2Cfunction()%7Bb.hide()%7D)%7D%3Bb.prototype.show%3Dfunction()%7Bvar%20b%3Dthis%3Bthis.backgroundElement.style.display%3D%22block%22%3Bthis.domElement.style.display%3D%22block%22%3Bthis.domElement.style.opacity%3D%0A0%3Bthis.domElement.style.webkitTransform%3D%22scale(1.1)%22%3Bthis.layout()%3Ba.defer(function()%7Bb.backgroundElement.style.opacity%3D1%3Bb.domElement.style.opacity%3D1%3Bb.domElement.style.webkitTransform%3D%22scale(1)%22%7D)%7D%3Bb.prototype.hide%3Dfunction()%7Bvar%20a%3Dthis%2Cb%3Dfunction()%7Ba.domElement.style.display%3D%22none%22%3Ba.backgroundElement.style.display%3D%22none%22%3Be.unbind(a.domElement%2C%22webkitTransitionEnd%22%2Cb)%3Be.unbind(a.domElement%2C%22transitionend%22%2Cb)%3Be.unbind(a.domElement%2C%22oTransitionEnd%22%2Cb)%7D%3Be.bind(this.domElement%2C%22webkitTransitionEnd%22%2C%0Ab)%3Be.bind(this.domElement%2C%22transitionend%22%2Cb)%3Be.bind(this.domElement%2C%22oTransitionEnd%22%2Cb)%3Bthis.backgroundElement.style.opacity%3D0%3Bthis.domElement.style.opacity%3D0%3Bthis.domElement.style.webkitTransform%3D%22scale(1.1)%22%7D%3Bb.prototype.layout%3Dfunction()%7Bthis.domElement.style.left%3Dwindow.innerWidth%2F2-e.getWidth(this.domElement)%2F2%2B%22px%22%3Bthis.domElement.style.top%3Dwindow.innerHeight%2F2-e.getHeight(this.domElement)%2F2%2B%22px%22%7D%3Breturn%20b%7D(dat.dom.dom%2Cdat.utils.common)%2Cdat.dom.dom%2Cdat.utils.common)%3B"></script><style type="text/css">.dg {
+  /** Clear list styles */
+  /* Auto-place container */
+  /* Auto-placed GUI's */
+  /* Line items that don't contain folders. */
+  /** Folder names */
+  /** Hides closed items */
+  /** Controller row */
+  /** Name-half (left) */
+  /** Controller-half (right) */
+  /** Controller placement */
+  /** Shorter number boxes when slider is present. */
+  /** Ensure the entire boolean and function row shows a hand */ }
+  .dg ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    clear: both; }
+  .dg.ac {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    z-index: 0; }
+  .dg:not(.ac) .main {
+    /** Exclude mains in ac so that we don't hide close button */
+    overflow: hidden; }
+  .dg.main {
+    -webkit-transition: opacity 0.1s linear;
+    -o-transition: opacity 0.1s linear;
+    -moz-transition: opacity 0.1s linear;
+    transition: opacity 0.1s linear; }
+    .dg.main.taller-than-window {
+      overflow-y: auto; }
+      .dg.main.taller-than-window .close-button {
+        opacity: 1;
+        /* TODO, these are style notes */
+        margin-top: -1px;
+        border-top: 1px solid #2c2c2c; }
+    .dg.main ul.closed .close-button {
+      opacity: 1 !important; }
+    .dg.main:hover .close-button,
+    .dg.main .close-button.drag {
+      opacity: 1; }
+    .dg.main .close-button {
+      /*opacity: 0;*/
+      -webkit-transition: opacity 0.1s linear;
+      -o-transition: opacity 0.1s linear;
+      -moz-transition: opacity 0.1s linear;
+      transition: opacity 0.1s linear;
+      border: 0;
+      position: absolute;
+      line-height: 19px;
+      height: 20px;
+      /* TODO, these are style notes */
+      cursor: pointer;
+      text-align: center;
+      background-color: #000; }
+      .dg.main .close-button:hover {
+        background-color: #111; }
+  .dg.a {
+    float: right;
+    margin-right: 15px;
+    overflow-x: hidden; }
+    .dg.a.has-save > ul {
+      margin-top: 27px; }
+      .dg.a.has-save > ul.closed {
+        margin-top: 0; }
+    .dg.a .save-row {
+      position: fixed;
+      top: 0;
+      z-index: 1002; }
+  .dg li {
+    -webkit-transition: height 0.1s ease-out;
+    -o-transition: height 0.1s ease-out;
+    -moz-transition: height 0.1s ease-out;
+    transition: height 0.1s ease-out; }
+  .dg li:not(.folder) {
+    cursor: auto;
+    height: 27px;
+    line-height: 27px;
+    overflow: hidden;
+    padding: 0 4px 0 5px; }
+  .dg li.folder {
+    padding: 0;
+    border-left: 4px solid rgba(0, 0, 0, 0); }
+  .dg li.title {
+    cursor: pointer;
+    margin-left: -4px; }
+  .dg .closed li:not(.title),
+  .dg .closed ul li,
+  .dg .closed ul li > * {
+    height: 0;
+    overflow: hidden;
+    border: 0; }
+  .dg .cr {
+    clear: both;
+    padding-left: 3px;
+    height: 27px; }
+  .dg .property-name {
+    cursor: default;
+    float: left;
+    clear: left;
+    width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis; }
+  .dg .c {
+    float: left;
+    width: 60%; }
+  .dg .c input[type=text] {
+    border: 0;
+    margin-top: 4px;
+    padding: 3px;
+    width: 100%;
+    float: right; }
+  .dg .has-slider input[type=text] {
+    width: 30%;
+    /*display: none;*/
+    margin-left: 0; }
+  .dg .slider {
+    float: left;
+    width: 66%;
+    margin-left: -5px;
+    margin-right: 0;
+    height: 19px;
+    margin-top: 4px; }
+  .dg .slider-fg {
+    height: 100%; }
+  .dg .c input[type=checkbox] {
+    margin-top: 9px; }
+  .dg .c select {
+    margin-top: 5px; }
+  .dg .cr.function,
+  .dg .cr.function .property-name,
+  .dg .cr.function *,
+  .dg .cr.boolean,
+  .dg .cr.boolean * {
+    cursor: pointer; }
+  .dg .selector {
+    display: none;
+    position: absolute;
+    margin-left: -9px;
+    margin-top: 23px;
+    z-index: 10; }
+  .dg .c:hover .selector,
+  .dg .selector.drag {
+    display: block; }
+  .dg li.save-row {
+    padding: 0; }
+    .dg li.save-row .button {
+      display: inline-block;
+      padding: 0px 6px; }
+  .dg.dialogue {
+    background-color: #222;
+    width: 460px;
+    padding: 15px;
+    font-size: 13px;
+    line-height: 15px; }
+
+/* TODO Separate style and structure */
+#dg-new-constructor {
+  padding: 10px;
+  color: #222;
+  font-family: Monaco, monospace;
+  font-size: 10px;
+  border: 0;
+  resize: none;
+  box-shadow: inset 1px 1px 1px #888;
+  word-wrap: break-word;
+  margin: 12px 0;
+  display: block;
+  width: 440px;
+  overflow-y: scroll;
+  height: 100px;
+  position: relative; }
+
+#dg-local-explain {
+  display: none;
+  font-size: 11px;
+  line-height: 17px;
+  border-radius: 3px;
+  background-color: #333;
+  padding: 8px;
+  margin-top: 10px; }
+  #dg-local-explain code {
+    font-size: 10px; }
+
+#dat-gui-save-locally {
+  display: none; }
+
+/** Main type */
+.dg {
+  color: #eee;
+  font: 11px 'Lucida Grande', sans-serif;
+  text-shadow: 0 -1px 0 #111;
+  /** Auto place */
+  /* Controller row, <li> */
+  /** Controllers */ }
+  .dg.main {
+    /** Scrollbar */ }
+    .dg.main::-webkit-scrollbar {
+      width: 5px;
+      background: #1a1a1a; }
+    .dg.main::-webkit-scrollbar-corner {
+      height: 0;
+      display: none; }
+    .dg.main::-webkit-scrollbar-thumb {
+      border-radius: 5px;
+      background: #676767; }
+  .dg li:not(.folder) {
+    background: #1a1a1a;
+    border-bottom: 1px solid #2c2c2c; }
+  .dg li.save-row {
+    line-height: 25px;
+    background: #dad5cb;
+    border: 0; }
+    .dg li.save-row select {
+      margin-left: 5px;
+      width: 108px; }
+    .dg li.save-row .button {
+      margin-left: 5px;
+      margin-top: 1px;
+      border-radius: 2px;
+      font-size: 9px;
+      line-height: 7px;
+      padding: 4px 4px 5px 4px;
+      background: #c5bdad;
+      color: #fff;
+      text-shadow: 0 1px 0 #b0a58f;
+      box-shadow: 0 -1px 0 #b0a58f;
+      cursor: pointer; }
+      .dg li.save-row .button.gears {
+        background: #c5bdad url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAANCAYAAAB/9ZQ7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAQJJREFUeNpiYKAU/P//PwGIC/ApCABiBSAW+I8AClAcgKxQ4T9hoMAEUrxx2QSGN6+egDX+/vWT4e7N82AMYoPAx/evwWoYoSYbACX2s7KxCxzcsezDh3evFoDEBYTEEqycggWAzA9AuUSQQgeYPa9fPv6/YWm/Acx5IPb7ty/fw+QZblw67vDs8R0YHyQhgObx+yAJkBqmG5dPPDh1aPOGR/eugW0G4vlIoTIfyFcA+QekhhHJhPdQxbiAIguMBTQZrPD7108M6roWYDFQiIAAv6Aow/1bFwXgis+f2LUAynwoIaNcz8XNx3Dl7MEJUDGQpx9gtQ8YCueB+D26OECAAQDadt7e46D42QAAAABJRU5ErkJggg==) 2px 1px no-repeat;
+        height: 7px;
+        width: 8px; }
+      .dg li.save-row .button:hover {
+        background-color: #bab19e;
+        box-shadow: 0 -1px 0 #b0a58f; }
+  .dg li.folder {
+    border-bottom: 0; }
+  .dg li.title {
+    padding-left: 16px;
+    background: black url(data:image/gif;base64,R0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlI+hKgFxoCgAOw==) 6px 10px no-repeat;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2); }
+  .dg .closed li.title {
+    background-image: url(data:image/gif;base64,R0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlGIWqMCbWAEAOw==); }
+  .dg .cr.boolean {
+    border-left: 3px solid #806787; }
+  .dg .cr.function {
+    border-left: 3px solid #e61d5f; }
+  .dg .cr.number {
+    border-left: 3px solid #2fa1d6; }
+    .dg .cr.number input[type=text] {
+      color: #2fa1d6; }
+  .dg .cr.string {
+    border-left: 3px solid #1ed36f; }
+    .dg .cr.string input[type=text] {
+      color: #1ed36f; }
+  .dg .cr.function:hover, .dg .cr.boolean:hover {
+    background: #111; }
+  .dg .c input[type=text] {
+    background: #303030;
+    outline: none; }
+    .dg .c input[type=text]:hover {
+      background: #3c3c3c; }
+    .dg .c input[type=text]:focus {
+      background: #494949;
+      color: #fff; }
+  .dg .c .slider {
+    background: #303030;
+    cursor: ew-resize; }
+  .dg .c .slider-fg {
+    background: #2fa1d6; }
+  .dg .c .slider:hover {
+    background: #3c3c3c; }
+    .dg .c .slider:hover .slider-fg {
+      background: #44abda; }
+</style>
+      <script data-savepage-src="scripts/stats.min.js" src="data:application/javascript;charset=utf-8,%2F%2F%20stats.js%20-%20http%3A%2F%2Fgithub.com%2Fmrdoob%2Fstats.js%0Avar%20Stats%3Dfunction()%7Bvar%20l%3DDate.now()%2Cm%3Dl%2Cg%3D0%2Cn%3DInfinity%2Co%3D0%2Ch%3D0%2Cp%3DInfinity%2Cq%3D0%2Cr%3D0%2Cs%3D0%2Cf%3Ddocument.createElement(%22div%22)%3Bf.id%3D%22stats%22%3Bf.addEventListener(%22mousedown%22%2Cfunction(b)%7Bb.preventDefault()%3Bt(%2B%2Bs%252)%7D%2C!1)%3Bf.style.cssText%3D%22width%3A80px%3Bopacity%3A0.9%3Bcursor%3Apointer%22%3Bvar%20a%3Ddocument.createElement(%22div%22)%3Ba.id%3D%22fps%22%3Ba.style.cssText%3D%22padding%3A0%200%203px%203px%3Btext-align%3Aleft%3Bbackground-color%3A%23002%22%3Bf.appendChild(a)%3Bvar%20i%3Ddocument.createElement(%22div%22)%3Bi.id%3D%22fpsText%22%3Bi.style.cssText%3D%22color%3A%230ff%3Bfont-family%3AHelvetica%2CArial%2Csans-serif%3Bfont-size%3A9px%3Bfont-weight%3Abold%3Bline-height%3A15px%22%3B%0Ai.innerHTML%3D%22FPS%22%3Ba.appendChild(i)%3Bvar%20c%3Ddocument.createElement(%22div%22)%3Bc.id%3D%22fpsGraph%22%3Bc.style.cssText%3D%22position%3Arelative%3Bwidth%3A74px%3Bheight%3A30px%3Bbackground-color%3A%230ff%22%3Bfor(a.appendChild(c)%3B74%3Ec.children.length%3B)%7Bvar%20j%3Ddocument.createElement(%22span%22)%3Bj.style.cssText%3D%22width%3A1px%3Bheight%3A30px%3Bfloat%3Aleft%3Bbackground-color%3A%23113%22%3Bc.appendChild(j)%7Dvar%20d%3Ddocument.createElement(%22div%22)%3Bd.id%3D%22ms%22%3Bd.style.cssText%3D%22padding%3A0%200%203px%203px%3Btext-align%3Aleft%3Bbackground-color%3A%23020%3Bdisplay%3Anone%22%3Bf.appendChild(d)%3Bvar%20k%3Ddocument.createElement(%22div%22)%3B%0Ak.id%3D%22msText%22%3Bk.style.cssText%3D%22color%3A%230f0%3Bfont-family%3AHelvetica%2CArial%2Csans-serif%3Bfont-size%3A9px%3Bfont-weight%3Abold%3Bline-height%3A15px%22%3Bk.innerHTML%3D%22MS%22%3Bd.appendChild(k)%3Bvar%20e%3Ddocument.createElement(%22div%22)%3Be.id%3D%22msGraph%22%3Be.style.cssText%3D%22position%3Arelative%3Bwidth%3A74px%3Bheight%3A30px%3Bbackground-color%3A%230f0%22%3Bfor(d.appendChild(e)%3B74%3Ee.children.length%3B)j%3Ddocument.createElement(%22span%22)%2Cj.style.cssText%3D%22width%3A1px%3Bheight%3A30px%3Bfloat%3Aleft%3Bbackground-color%3A%23131%22%2Ce.appendChild(j)%3Bvar%20t%3Dfunction(b)%7Bs%3Db%3Bswitch(s)%7Bcase%200%3Aa.style.display%3D%0A%22block%22%3Bd.style.display%3D%22none%22%3Bbreak%3Bcase%201%3Aa.style.display%3D%22none%22%2Cd.style.display%3D%22block%22%7D%7D%3Breturn%7BREVISION%3A11%2CdomElement%3Af%2CsetMode%3At%2Cbegin%3Afunction()%7Bl%3DDate.now()%7D%2Cend%3Afunction()%7Bvar%20b%3DDate.now()%3Bg%3Db-l%3Bn%3DMath.min(n%2Cg)%3Bo%3DMath.max(o%2Cg)%3Bk.textContent%3Dg%2B%22%20MS%20(%22%2Bn%2B%22-%22%2Bo%2B%22)%22%3Bvar%20a%3DMath.min(30%2C30-30*(g%2F200))%3Be.appendChild(e.firstChild).style.height%3Da%2B%22px%22%3Br%2B%2B%3Bb%3Em%2B1E3%26%26(h%3DMath.round(1E3*r%2F(b-m))%2Cp%3DMath.min(p%2Ch)%2Cq%3DMath.max(q%2Ch)%2Ci.textContent%3Dh%2B%22%20FPS%20(%22%2Bp%2B%22-%22%2Bq%2B%22)%22%2Ca%3DMath.min(30%2C30-30*(h%2F100))%2Cc.appendChild(c.firstChild).style.height%3D%0Aa%2B%22px%22%2Cm%3Db%2Cr%3D0)%3Breturn%20b%7D%2Cupdate%3Afunction()%7Bl%3Dthis.end()%7D%7D%7D%3B%0A"></script>
+      <script id="vertex" type="x-shader">
+attribute vec2 aVertexPosition;
+
+void main()
+{
+   gl_Position = vec4(aVertexPosition, 0.0, 1.0);
+}
+      </script>
+      <script id="fragment" type="x-shader">
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform float time;
+uniform vec2 resolution;
+uniform vec3 cameraPos;
+uniform vec3 cameraLookat;
+uniform vec3 lightDir;
+uniform vec3 lightColour;
+uniform float specular;
+uniform float specularHardness;
+uniform vec3 diffuse;
+uniform bool postEffects;
+uniform bool moveCamera;
+uniform bool reflections;
+uniform float seaHeight;
+
+#define GAMMA 0.8
+#define CONTRAST 1.1
+#define SATURATION 1.3
+#define BRIGHTNESS 1.3
+#define RAY_DEPTH 256
+#define MAX_DEPTH 200.0
+#define DISTANCE_MIN 0.001
+#define PI 3.14159265
+
+const vec2 delta = vec2(DISTANCE_MIN, 0.);
+
+float Hash(in float n)
+{
+    return fract(sin(n)*43758.5453123);
+}
+
+float Noise(in vec2 x)
+{
+    vec2 p = floor(x);
+    vec2 f = fract(x);
+    f = f*f*(3.0-2.0*f);
+    float n = p.x + p.y*57.0;
+    float res = mix(mix( Hash(n+  0.0), Hash(n+  1.0),f.x),
+                    mix( Hash(n+ 57.0), Hash(n+ 58.0),f.x),f.y);
+    return res;
+}
+
+// Octave transform matrix from Alexander Alekseev aka TDM 
+mat2 octave_m = mat2(1.6,1.2,-1.2,1.6);
+
+float FractalNoise(in vec2 xy)
+{
+   float m = 1.5;
+   float w = 0.5;
+   float f = 0.0;
+   for (int i = 0; i < 6; i++)
+   {
+      f += Noise(xy+time*0.511) * m * 0.15;
+      f += Noise(xy.yx-time*0.333) * w * 0.25;
+      w *= 0.5;
+      m *= 0.25;
+      xy *= octave_m;
+   }
+   return f;
+}
+
+// This should return continuous positive values when outside and negative values inside,
+// which roughly indicate the distance of the nearest surface.
+float Dist(vec3 pos)
+{
+   return dot(pos-vec3(0.,-FractalNoise(pos.xz),0.), vec3(0.,1.,0.));
+}
+
+vec3 GetNormal(vec3 pos)
+{
+   vec3 n;
+   n.x = Dist( pos + delta.xyy ) - Dist( pos - delta.xyy );
+   n.y = Dist( pos + delta.yxy ) - Dist( pos - delta.yxy );
+   n.z = Dist( pos + delta.yyx ) - Dist( pos - delta.yyx );
+   
+   return normalize(n);
+}
+
+// Original method by David Hoskins
+vec3 Sky(in vec3 rd)
+{
+   float sunAmount = max(dot(rd, lightDir), 0.0);
+   float v = pow(1.0 - max(rd.y,0.0),6.);
+   vec3 sky = mix(vec3(.1, .2, .4), vec3(.32, .32, .32), v);
+   sky += lightColour * sunAmount * sunAmount * .25 + lightColour * min(pow(sunAmount, 800.0)*1.5, .3);
+   
+   return clamp(sky, 0.0, 1.0);
+}
+
+// Fog routine - original by IQ
+vec3 Fog(vec3 rgb, vec3 rd, float distance)   // camera to point distance
+{
+   const float b = 0.10;
+   float fogAmount = 1.0 - exp(-distance*b*b);
+   vec3  fogColor = Sky(rd);
+   return mix(rgb, fogColor, fogAmount);
+}
+
+const vec3 WATER_COLOR = vec3(0.6,0.9,0.6);
+vec3 Shading(vec3 pos, vec3 rd, vec3 norm, vec3 ro)
+{
+   vec3 light = lightColour * max(0.0, dot(norm, lightDir));
+   vec3 view = normalize(-rd);
+   vec3 heading = normalize(view + lightDir);
+   float spec = pow(max(0.0, dot(heading, norm)), specularHardness);
+   
+   float fresnel = 0.0;
+   if (reflections)
+   {
+      fresnel = pow(1.0 - dot(view, norm), 5.0);
+      fresnel = mix(0.0, 1.0, min(1.0, fresnel));
+   }
+   
+   light = (diffuse * light) + (spec * specular * lightColour) * (1.0-fresnel);
+   
+   if (fresnel > 0.0)
+   {
+      vec3 refrd = reflect(rd, norm);
+      light += Sky(refrd) * fresnel;
+   }
+   
+   // attenuation
+   vec3 dist = pos - ro;
+   float atten = max(1.0 - dot(dist,dist) * 0.001, 0.0);
+   light += WATER_COLOR * (pos.y - seaHeight) * 0.20 * atten;
+   
+   light = Fog(light, rd, length(ro-pos));
+   
+   return light;
+}
+
+// Original method by David Hoskins
+vec3 PostEffects(vec3 rgb, vec2 xy)
+{
+   rgb = pow(rgb, vec3(GAMMA));
+   rgb = mix(vec3(.5), mix(vec3(dot(vec3(.2125, .7154, .0721), rgb*BRIGHTNESS)), rgb*BRIGHTNESS, SATURATION), CONTRAST);
+   rgb *= .4+0.5*pow(40.0*xy.x*xy.y*(1.0-xy.x)*(1.0-xy.y), 0.2 ); 
+   return rgb;
+}
+
+// Camera function by TekF
+// Compute ray from camera parameters
+vec3 GetRay(vec3 dir, vec2 pos)
+{
+   pos = pos - 0.5;
+   pos.x *= resolution.x/resolution.y;
+   
+   dir = normalize(dir);
+   vec3 right = normalize(cross(vec3(0.,1.,0.),dir));
+   vec3 up = normalize(cross(dir,right));
+   
+   return dir + right*pos.x + up*pos.y;
+}
+
+vec4 March(vec3 ro, vec3 rd)
+{
+   float t = 0.0;
+   float d = 1.0;
+   for (int i=0; i<RAY_DEPTH; i++)
+   {
+      vec3 p = ro + rd * t;
+      d = Dist(p);
+      if (abs(d) < DISTANCE_MIN)
+      {
+         return vec4(p, 1.0);
+      }
+      t += d;
+      if (t >= MAX_DEPTH) break;
+   }
+   return vec4(0.0);
+}
+
+void main()
+{
+   vec3 off = vec3(0.0);
+   if (moveCamera) off.z -= time*0.5;
+   
+   vec2 p = gl_FragCoord.xy / resolution.xy;
+   vec3 ro = cameraPos + off;
+   vec3 rd = normalize(GetRay((cameraLookat-off)-cameraPos+off, p));
+   
+   vec4 res = March(ro, rd);
+   if (res.a == 1.0) res.rgb = Shading(res.rgb, rd, GetNormal(res.rgb), ro).rgb;
+   else res.rgb = Sky(rd);
+   if (postEffects) res.rgb = PostEffects(res.rgb, p);
+   
+   gl_FragColor = vec4(res.rgb, 1.0);
+}
+      </script>
+      
+      <script type="text/javascript">
+var requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame ||
+                            window.mozRequestAnimationFrame || window.msRequestAnimationFrame || 
+                            function(c) {window.setTimeout(c, 15)};
+var config = {
+   camera: {
+      x: 0.0, y: 5.0, z: 0.0
+   },
+   lookat: {
+      x: -125.0, y: -100.0, z: -95.0
+   },
+   lightDir: {
+      x: -1.0, y: 0.8, z: -1.0
+   },
+   lightColour: {
+      r: 0.7, g: 0.8, b: 0.9
+   },
+   surface: {
+      specular: 8.0,
+      specularHardness: 512.0,
+      diffuse: 0.1,
+      attenuation: -0.5
+   },
+   global: {
+      reflections: true,
+      postEffects: true,
+      moveCamera: true
+   }
+};
+
+var pause = false;
+var stats = new Stats();
+var aspect, gl;
+function init()
+{
+   document.addEventListener('keydown', function(e) {
+      switch (e.keyCode)
+      {
+         case 27: // ESC
+            pause = !pause;
+            break;
+      }
+   }, false);
+
+   // add GUI controls
+   var mobile = (navigator.userAgent.indexOf("Android") !== -1);
+   var gui = new dat.GUI();
+   var panel = gui.addFolder('Camera Position');
+   panel.add(config.camera, "x").min(-256).max(256).step(0.1);
+   panel.add(config.camera, "y").min(-100).max(100).step(0.1);
+   panel.add(config.camera, "z").min(-100).max(100).step(0.1);
+   //panel.open();
+   panel = gui.addFolder('Camera LookAt');
+   panel.add(config.lookat, "x").min(-256).max(256).step(0.1);
+   panel.add(config.lookat, "y").min(-100).max(100).step(0.1);
+   panel.add(config.lookat, "z").min(-100).max(100).step(0.1);
+   if (!mobile) panel.open();
+   panel = gui.addFolder('Light Direction');
+   panel.add(config.lightDir, "x").min(-10).max(10).step(0.1);
+   panel.add(config.lightDir, "y").min(-10).max(10).step(0.1);
+   panel.add(config.lightDir, "z").min(-10).max(10).step(0.1);
+   if (!mobile) panel.open();
+   panel = gui.addFolder('Light Colour');
+   panel.add(config.lightColour, "r").min(0).max(3).step(0.1);
+   panel.add(config.lightColour, "g").min(0).max(3).step(0.1);
+   panel.add(config.lightColour, "b").min(0).max(3).step(0.1);
+   //if (!mobile) panel.open();
+   panel = gui.addFolder('Surface');
+   panel.add(config.surface, "specular").min(0).max(64);
+   panel.add(config.surface, "specularHardness").min(16).max(1024).step(16);
+   panel.add(config.surface, "diffuse").min(0).max(1).step(0.05);
+   panel.add(config.surface, "attenuation").min(-2).max(0).step(0.01);
+   panel.open();
+   panel = gui.addFolder('Global');
+   panel.add(config.global, "reflections").name("Reflections");
+   panel.add(config.global, "postEffects").name("Post Effects");
+   panel.add(config.global, "moveCamera").name("Move Camera");
+   if (!mobile) panel.open();
+   
+   document.body.appendChild(stats.domElement);
+   
+   // create webgl context on the canvas element
+   var canvas = document.getElementById("canvas");
+   aspect = canvas.width / canvas.height;
+   try
+   {
+      gl = canvas.getContext("experimental-webgl");
+   }
+   catch (e)
+   {
+      document.write("Whoops! No useful WEB-GL impl available. Shame on you and your browser vendor.<br>" + e.message);
+      return;
+   }
+   gl.viewport(0, 0, canvas.width, canvas.height);
+   gl.clearColor(0, 0, 0, 1);
+   gl.clear(gl.COLOR_BUFFER_BIT);
+   
+   // get the vertex and fragment shader source
+   var v = document.getElementById("vertex").firstChild.nodeValue;
+   var f = document.getElementById("fragment").firstChild.nodeValue;
+   
+   // compile and link the shaders
+   var vs = gl.createShader(gl.VERTEX_SHADER);
+   gl.shaderSource(vs, v);
+   gl.compileShader(vs);
+   
+   var fs = gl.createShader(gl.FRAGMENT_SHADER);
+   gl.shaderSource(fs, f);
+   gl.compileShader(fs);
+   
+   var program = gl.createProgram();
+   gl.attachShader(program, vs);
+   gl.attachShader(program, fs);
+   gl.linkProgram(program);
+   
+   // debug shader compile status
+   var error = false;
+   if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS))
+   {
+      error = true;
+      console.log(gl.getShaderInfoLog(vs));
+   }
+   
+   if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS))
+   {
+      error = true;
+      console.log(gl.getShaderInfoLog(fs));
+   }
+   
+   if (!gl.getProgramParameter(program, gl.LINK_STATUS))
+   {
+      error = true;
+      console.log(gl.getProgramInfoLog(program));
+   }
+   if (error) return;
+   
+   var firstTime = Date.now();
+   (f = function() {
+      if (!pause)
+      {
+         stats.begin();
+         
+         // create vertices to fill the canvas with a single quad 
+         var vertices = new Float32Array(
+            [
+               -1, 1*aspect, 1, 1*aspect, 1, -1*aspect,
+               -1, 1*aspect, 1, -1*aspect, -1, -1*aspect
+            ]);
+         
+         var vbuffer = gl.createBuffer();
+         gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
+         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+         
+         var triCount = 2,
+             numItems = vertices.length / triCount;
+         
+         gl.useProgram(program);
+         
+         var time = (Date.now() - firstTime) / 1000.0;
+         program.time = gl.getUniformLocation(program, "time");
+         gl.uniform1f(program.time, time);
+         
+         program.resolution = gl.getUniformLocation(program, "resolution");
+         gl.uniform2f(program.resolution, canvas.width, canvas.height);
+         
+         program.cameraPos = gl.getUniformLocation(program, "cameraPos");
+         gl.uniform3f(program.cameraPos, config.camera.x, config.camera.y, config.camera.z);
+         
+         program.cameraLookat = gl.getUniformLocation(program, "cameraLookat");
+         gl.uniform3f(program.cameraLookat, config.lookat.x, config.lookat.y, config.lookat.z);
+         
+         program.lightDir = gl.getUniformLocation(program, "lightDir");
+         // pre normalise light dir
+         var x = config.lightDir.x, y = config.lightDir.y, z = config.lightDir.z;
+         var len = x*x + y*y + z*z;
+         len = 1.0 / Math.sqrt(len);
+         gl.uniform3f(program.lightDir, config.lightDir.x*len, config.lightDir.y*len, config.lightDir.z*len);
+         
+         program.lightColour = gl.getUniformLocation(program, "lightColour");
+         gl.uniform3f(program.lightColour, config.lightColour.r, config.lightColour.g, config.lightColour.b);
+         
+         program.specular = gl.getUniformLocation(program, "specular");
+         gl.uniform1f(program.specular, config.surface.specular);
+         
+         program.specularHardness = gl.getUniformLocation(program, "specularHardness");
+         gl.uniform1f(program.specularHardness, config.surface.specularHardness);
+         
+         program.diffuse = gl.getUniformLocation(program, "diffuse");
+         gl.uniform3f(program.diffuse, config.surface.diffuse,config.surface.diffuse,config.surface.diffuse);
+         
+         program.moveCamera = gl.getUniformLocation(program, "moveCamera");
+         gl.uniform1f(program.moveCamera, config.global.moveCamera);
+         
+         program.postEffects = gl.getUniformLocation(program, "postEffects");
+         gl.uniform1f(program.postEffects, config.global.postEffects);
+         
+         program.reflections = gl.getUniformLocation(program, "reflections");
+         gl.uniform1f(program.reflections, config.global.reflections);
+         
+         program.seaHeight = gl.getUniformLocation(program, "seaHeight");
+         gl.uniform1f(program.seaHeight, config.surface.attenuation);
+         
+         program.aVertexPosition = gl.getAttribLocation(program, "aVertexPosition");
+         gl.enableVertexAttribArray(program.aVertexPosition);
+         gl.vertexAttribPointer(program.aVertexPosition, triCount, gl.FLOAT, false, 0, 0);
+         
+         gl.drawArrays(gl.TRIANGLES, 0, numItems);
+         
+         stats.end();
+      }
+      requestAnimationFrame(f);
+   })();
+}
+      </script>
+      <style data-savepage-href="../../reset.css">html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outline:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}</style>
+      <style data-savepage-href="./page.css">body
+{
+   font-family: Segoe UI Light, Tahoma, Arial, Helvetica;
+   color: #eee;
+	background: #333;
+	xbackground-image: /*savepage-url=../images/stone.jpg*/ url();
+}
+p.title, div.title
+{
+   padding: 1.5em;
+   text-align: center;
+   font-weight: bold;
+   font-size: 2.5em;
+   text-shadow: 1px 1px 3px rgba(55,55,55, .5);
+}
+a,
+a:visited,
+a:hover
+{
+   text-decoration: none;
+}
+a:hover
+{
+   text-decoration: underline;
+}
+P
+{
+   padding-left: 2em;
+   padding-top: 0.5em;
+   line-height: 1.5em;
+   font-size: 1em;
+}
+P.left
+{
+   padding-left: 1em;
+   line-height: 1.5em;
+}
+#canvas {
+   margin-left: 20px;
+   margin-top: 20px;
+   box-shadow: 0 0 16px rgba(0,0,0,0.5);
+}
+#stats {
+   margin-left: 20px;
+   margin-top: 20px;
+}
+a#fullscreen {
+  font-family:Arial, Helvetica, sans-serif;position:absolute;left:20px;bottom:20px;
+  border: 1px solid black;
+  background-color: rgb(55,55,55);
+  color: #F5D6A7;
+  box-shadow: 0px 0.5px 2px rgb(55,55,55);
+  padding: 8px 16px;
+}
+a#back {
+  font-family:Arial, Helvetica, sans-serif;position:absolute;right:20px;bottom:20px;
+  border: 1px solid black;
+  background-color: rgb(55,55,55);
+  box-shadow: 0px 0.5px 2px rgb(55,55,55);
+  padding: 8px 16px;
+}
+a, a:visited, a:active, a:hover
+{
+   color: #fff6e2;
+   text-shadow: 1px 1px 3px rgba(0,0,0, .5);
+}
+.small
+{
+   text-align:center;
+   font-size: 0.75em;
+}
+P.lowtitle
+{
+   font-size: 1.5em;
+   line-height: 1.2em;
+   padding-top: 0;
+   padding-left: 1.1em;
+   padding-bottom: 1.5em;
+}
+P.subtitle
+{
+   font-size: 1.5em;
+   font-weight: 300;
+   padding-top: 0;
+   padding-left: 1.5em;
+   padding-bottom: 0.25em;
+}
+div.container
+{
+   width: 95%;
+}
+div.row
+{
+   clear: both;
+}
+div.column-left img
+{
+   box-shadow: 0 0 16px rgba(0,0,0,0.5);
+}
+div.column-left
+{
+   width: 340px;
+   text-align: right;
+   float: left;
+   padding-right: 24px;
+}
+div.column-right
+{
+   max-width: 1200px;
+   min-height: 264px;
+   margin-left: 340px;
+   padding-bottom: 24px;
+}
+div.column-right-s
+{
+   max-width: 1200px;
+   min-height: 206px;
+   margin-left: 340px;
+   padding-bottom: 24px;
+}
+div.footer
+{
+   padding-bottom: 8px;
+}</style>
+      <style data-savepage-href="http://fonts.googleapis.com/css?family=Open+Sans:400,300,600" type="text/css">/* cyrillic-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Light'), local('OpenSans-Light'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UN_r8OX-hpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Light'), local('OpenSans-Light'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UN_r8OVuhpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Light'), local('OpenSans-Light'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UN_r8OXuhpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Light'), local('OpenSans-Light'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UN_r8OUehpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+0370-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Light'), local('OpenSans-Light'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UN_r8OXehpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Light'), local('OpenSans-Light'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UN_r8OXOhpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Light'), local('OpenSans-Light'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UN_r8OUuhp.woff2*/ url() format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans Regular'), local('OpenSans-Regular'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFWJ0bbck.woff2*/ url() format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans Regular'), local('OpenSans-Regular'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFUZ0bbck.woff2*/ url() format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans Regular'), local('OpenSans-Regular'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFWZ0bbck.woff2*/ url() format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans Regular'), local('OpenSans-Regular'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFVp0bbck.woff2*/ url() format('woff2');
+  unicode-range: U+0370-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans Regular'), local('OpenSans-Regular'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFWp0bbck.woff2*/ url() format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans Regular'), local('OpenSans-Regular'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFW50bbck.woff2*/ url() format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans Regular'), local('OpenSans-Regular'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem8YaGs126MiZpBA-UFVZ0b.woff2*/ url() format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans SemiBold'), local('OpenSans-SemiBold'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UNirkOX-hpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans SemiBold'), local('OpenSans-SemiBold'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UNirkOVuhpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans SemiBold'), local('OpenSans-SemiBold'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UNirkOXuhpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans SemiBold'), local('OpenSans-SemiBold'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UNirkOUehpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+0370-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans SemiBold'), local('OpenSans-SemiBold'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UNirkOXehpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans SemiBold'), local('OpenSans-SemiBold'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UNirkOXOhpOqc.woff2*/ url() format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans SemiBold'), local('OpenSans-SemiBold'), /*savepage-url=https://fonts.gstatic.com/s/opensans/v17/mem5YaGs126MiZpBA-UNirkOUuhp.woff2*/ url() format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+   
+<link rel="icon" href="data:image/x-icon;base64,AAABAAIAEBAAAAEACABoBQAAJgAAACAgAAABAAgAqAgAAI4FAAAoAAAAEAAAACAAAAABAAgAAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAA////AO/u6wD+//8A29XFAK+ZcQCojVcAn4JVALywlwDn5N4A7OzrAM2/pwCsjlQAv6FiAM6wZgCEeH8AlphkANCjcgC3lGEAqJFgANTKtwD9//8AgHFRAMOjawDNrWkAuat4AGJYfgALD6cALiGeADKdOwAtkkwAhZ1jANCiegDGpXMAt5ddAK+olQBRQiQAaVs3AExHjwAMDqgAHyCjACQlogA5LJkAPZs+AECTTQA4lEsAKZVHAH+EXABjUzkAkoh0AHBeOwBtWi4AMC+cACYloAAnJ6AAIyShADgrmwA9mj0APZBLAD+TTAA9mE0AW3pKAG9aPgCUiHQAfHBUAGpXKwA1M54AJCShACYmnwAiI6EANSeZADybPQA9jUgAO5lNAF97SwBpVDkAq6STAIR5YgBlVS0AOTdzACMkpQAjJKAAHxSfADsXlABGjCgAOolBADyOSQA6lEsAX3xMAGVPNAC7tagAiYJwAGNTLAA6NnYAHBGkADMMjQA7hasAEfLcAA7P1ABXonsARHkrADePQwBfaEUAYk0wAMXCswCKgG0AX08rAEQ+cQA/lrQAEfTdAADo4gAA3NwAAN3dAADm6wAf4+oAQa2GAFpxPgBeSS8AzMe5AJKIeABbSC4AY1o+AB68sgAA/P8AAOTmAADg4AAA4OEAAOrtAAD0+gAvsp0Ad1Q6AFhKLQDMx7cAycm/ADclCABeTjIAakQoAG1GKwAbzsYAAPr+AAD//wA4q6AAclMoAHRTNgBiUzUARjMTAOfl3gBuYUgARjccAGNTOABsQCIAUnJdAG5aPAB3VDUAa1k9AEk3GACcj3gA4d/XAFJGJwBTQycAa1U6AHFfQgBWQyQAdGRKAPr//wC3rqAARzIRAF5PMQDb3NYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKioqKioqKinp6ioqKioqKioqKioqKdLeKJZqKioqKioqKioqFk/L3igoFqEqKioqKiohKIvL3hllqCgmZunqKioWS8vL2V5e3yMZaCZooSoqJsvZYB9fX19fW5yZZlZqKibL2pfYW5ubm5hcmWgpKioaC9cNDNfiYlyR1U8oEuoqFp4XDVDNClHR1U6PKBLqKg/eFw1NTRBVTk6K0mgS6ioP3hcNTU1QUc5KytXonaoqJKiJTU1NSk5Kys7LqKbqKibICCbGTMpOjseBCAgS6ioqIQHBAQEDh4YBBgHp6ioqKioqKdnBAQEImenqKioqKioqKioqKiEp6ioqKioqKj+fwAA+D8AAPAPAADAAwAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAwAMAAPAPAAD+fwAAKAAAACAAAABAAAAAAQAIAAAAAACABAAAAAAAAAAAAAAAAAAAAAAAAAAAAACKhXsAhYJ9AIOCfwCVi3kApZJuALCZbACjknAAkop6AIKAfgCNiH0ApJV2ALaecAC4n3EAsJl0AIZ7fQCOnGQAuaFyALmgcQCznXMApZV2AIeEfwCXhWMAu6JyAL+ldQCciIEAZluSADEvogA5O5YAP5JMAFCYUwCMoWYAsqZyAMCmdQC9pHQAkYNnAGhbQwBzZEcAUkuRACkpqQAoKKUAJyehADg6lAA/kEsAQJNNAEGWTgBDmlEAepJbAHpqSwB3bFcAaFxGAGdaPwA8OIoAJyeiACcnnwA3OZEAPY1JAD+RSwBAlE0AQZdPAF5/TAB0ZUcAc2lVAGZaRABmWT8APjqBACgoogAlJZsANjiOADyLSQA+jksAP5FMAEGVTgBgeksAcWJFAHZuXQBpX0wAZFc9AD04fgAmJpwAJSWYADg5jQA7iEcAPYtJAD2OSgBed0kAb2BEAHRsXABmXUoAY1U8ADw4fAAvLpcAMYWrABzJyQAHzMUAJqV6AEGKSgBbdEcAbl9DAHNsXgBrY1MAYVQ8AENKdAA4jbIAAtDXAADb2wAA3NwAB9PLADKogABmbkcAa11CAHJsYABqYlIAX1M6AFZlTwAjrqUAAOHhAADi4gAG2dgAOpyNAGZmTABqXEEAdnFmAHFsYgBfUjoAYFM7AGJVPQBYaFEAJLSrAADn5wAH4N4ANaiaAGhoTQBtXkMAaVxDAHp3cQB4dnIAYFVAAGRXPgBca1QAY3JYAGxeQgBrXEEAcWhXAH17eAB1cGcAZFlDAGJVPABnWT8AbV9DAHBlUQB7encAcGlcAGxfRQB1b2UAfnx5AH9+fQD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAhAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABg+eYUZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB6k5N5lYU9FAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIZWVNTW5WYoVuMRgAAAAAAAAAAAAAAAAAAAAAAAAgPmWTk01NblZWYpWFbgEhAAAAAAAAAAAAAAAAAAAYj3Flk5NNioqFSlZWVoVueXkEAAAAAAAAAAAAAAAAh3x9ZWWTTU2Kf4B3SkpWYo1ueXmWIAAAAAAAAAAAGXx8fH1lTU1Nf4CBgYF2d0pWVoVueXkzPhgAAAAAACF8fHx9ZZNNf4OBgYGBgYGBXTxWlY1ueXkzCAAAAAAAIXx8fWWTk3drdXV1dXV1dXV1dV08lY1ueTMBAAAAAAAhfH1lk2BranR0dHR0dHR0dHR0dHSAi41ueXoAAAAAABh8fWWJJoBqampqampqampqampqdoM8hW55MQAAAAAAIH1lk3JPTyaAdmlpaWlpaWlpa3ceOGBWhW6WAAAAAAAgZZNNck9PQ08agGtoaWlpXXceODhUYFaVjSQAAAAAAAuTWU1yT09PQ09QJmdrXmweRUU4RitgSlaVbgAAAAAAFJNNimYpNjZDQ1BQUCZgUkVFOEYrHWAlSlaFAAAAAAAETYqKZikpNk9PUFBQZkVFUzhGRkcsYCVKVlYAAAAAABlNikBmNTUpNk9PQ1BmRVM4VEZHLEgrJSVKVgAAAAAACoqKM2YoNTUpNk9PQ2ZFOFRGRyw6LUg9JSVKAAAAAAAPipQzZicoKDUpT09PZjg4RjksSC07LT09JUoAAAAAAD5AlHlmJycoNUIpT08mOEY5LDpIOy4uPT09JQAAAAAAMZR5eWYnJygoNTU2TyZGKx06SDs7Li4wPT0lAAAAAABMM44jGSYnJygoQjUpJitHLDo7Oy4eHwUwPT0AAAAAAI0jDSEhIQ4aGygoNUImRyxIOzseHyEhISEFMQAAAAAAICIXFxciIhgMCSYoQiYsSB4vIBgYGBgYIiIYAAAAAAAAACEYDRESERERFxkaJh4QDBcXFxcXFxgYAAAAAAAAAAAAAAAAGBMMDAwMDAwMDQwMDAwMDCAhAAAAAAAAAAAAAAAAAAAAACEgBgYGBgYGBgYGExgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIQ4GBgYGICEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACEgIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///////+f///+D////AP///AA///AAD//AAAf/gAAB/gAAAHwAAAB8AAAAfAAAAHwAAAB8AAAAfAAAAHwAAAB8AAAAfAAAAHwAAAB8AAAAfAAAAHwAAAB8AAAAfAAAAHwAAAB8AAAAfwAAAf/gAAf/+AA///8A////x///////8=">
+<style id="savepage-cssvariables">
+  :root {
+    --savepage-url-6: url(data:image/png;base64,);
+  }
+</style>
+<script id="savepage-shadowloader" type="application/javascript">
+  "use strict"
+  window.addEventListener("DOMContentLoaded",
+  function(event)
+  {
+    savepage_ShadowLoader(5);
+  },false);
+  function savepage_ShadowLoader(c){createShadowDOMs(0,document.documentElement);function createShadowDOMs(a,b){var i;if(b.localName=="iframe"||b.localName=="frame"){if(a<c){try{if(b.contentDocument.documentElement!=null){createShadowDOMs(a+1,b.contentDocument.documentElement)}}catch(e){}}}else{if(b.children.length>=1&&b.children[0].localName=="template"&&b.children[0].hasAttribute("data-savepage-shadowroot")){b.attachShadow({mode:"open"}).appendChild(b.children[0].content);b.removeChild(b.children[0]);for(i=0;i<b.shadowRoot.children.length;i++)if(b.shadowRoot.children[i]!=null)createShadowDOMs(a,b.shadowRoot.children[i])}for(i=0;i<b.children.length;i++)if(b.children[i]!=null)createShadowDOMs(a,b.children[i])}}}
+</script>
+<meta name="savepage-url" content="http://www.kevs3d.co.uk/dev/shaders/waves2.html#">
+<meta name="savepage-title" content="">
+<meta name="savepage-from" content="http://www.kevs3d.co.uk/dev/shaders/waves2.html#">
+<meta name="savepage-date" content="Tue Nov 19 2019 19:01:00 GMT-0300 (Horário Padrão de Brasília)">
+<meta name="savepage-state" content="Custom Items; HTML image files (all); HTML audio & video files; HTML object & embed files; CSS image files (all); CSS font files (all); Scripts (in same-origin frames); Retained cross-origin frames; Removed unsaved URLs; Allowed passive mixed content; Max frame depth = 5; Max resource size = 50MB; Max resource time = 10s;">
+<meta name="savepage-version" content="16.2">
+<meta name="savepage-comments" content="">
+  </head>
+   <body onload="init()">
+      <canvas id="canvas" width="768" height="512"></canvas>
+      <a href="#" id="fullscreen">Toggle Full Screen</a>
+      <a href="." id="back">Show me more awesome demos!</a>
+   
+<div class="dg ac"><div class="dg main a" style="width: 245px;"><div style="width: 6px; margin-left: -3px; height: 532px; cursor: ew-resize; position: absolute;"></div><ul style="height: auto;"><li class="folder"><div class="dg"><ul class="closed"><li class="title">Camera Position</li><li class="cr number has-slider"><div><span class="property-name">x</span><div class="c"><div><input type="text" value="0"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">y</span><div class="c"><div><input type="text" value="5"></div><div class="slider"><div class="slider-fg" style="width: 52.5%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">z</span><div class="c"><div><input type="text" value="0"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul><li class="title">Camera LookAt</li><li class="cr number has-slider"><div><span class="property-name">x</span><div class="c"><div><input type="text" value="256"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">y</span><div class="c"><div><input type="text" value="100"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">z</span><div class="c"><div><input type="text" value="100"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul><li class="title">Light Direction</li><li class="cr number has-slider"><div><span class="property-name">x</span><div class="c"><div><input type="text" value="10"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">y</span><div class="c"><div><input type="text" value="10"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">z</span><div class="c"><div><input type="text" value="10"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">Light Colour</li><li class="cr number has-slider"><div><span class="property-name">r</span><div class="c"><div><input type="text" value="0.7"></div><div class="slider"><div class="slider-fg" style="width: 23.3333%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">g</span><div class="c"><div><input type="text" value="0.8"></div><div class="slider"><div class="slider-fg" style="width: 26.6667%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">b</span><div class="c"><div><input type="text" value="0.9"></div><div class="slider"><div class="slider-fg" style="width: 30%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul><li class="title">Surface</li><li class="cr number has-slider"><div><span class="property-name">specular</span><div class="c"><div><input type="text" value="64"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">specularHardness</span><div class="c"><div><input type="text" value="1024"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">diffuse</span><div class="c"><div><input type="text" value="1"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">attenuation</span><div class="c"><div><input type="text" value="0"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul><li class="title">Global</li><li class="cr boolean"><div><span class="property-name">Reflections</span><div class="c"><input type="checkbox" checked="checked"></div></div></li><li class="cr boolean"><div><span class="property-name">Post Effects</span><div class="c"><input type="checkbox" checked="checked"></div></div></li><li class="cr boolean"><div><span class="property-name">Move Camera</span><div class="c"><input type="checkbox" checked="checked"></div></div></li></ul></div></li></ul><div class="close-button" style="width: 245px;">Close Controls</div></div></div><div id="stats" style="width: 80px; opacity: 0.9; cursor: pointer;"><div id="fps" style="padding: 0px 0px 3px 3px; text-align: left; background-color: rgb(0, 0, 34);"><div id="fpsText" style="color: rgb(0, 255, 255); font-family: Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; line-height: 15px;">5 FPS (0-10)</div><div id="fpsGraph" style="position: relative; width: 74px; height: 30px; background-color: rgb(0, 255, 255);"><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.2px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.4px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 27.9px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.2px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.4px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 27.9px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.4px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 29.1px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.8px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.2px; float: left; background-color: rgb(17, 17, 51);"></span><span style="width: 1px; height: 28.5px; float: left; background-color: rgb(17, 17, 51);"></span></div></div><div id="ms" style="padding: 0px 0px 3px 3px; text-align: left; background-color: rgb(0, 34, 0); display: none;"><div id="msText" style="color: rgb(0, 255, 0); font-family: Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; line-height: 15px;">0 MS (0-15)</div><div id="msGraph" style="position: relative; width: 74px; height: 30px; background-color: rgb(0, 255, 0);"><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.7px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.7px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 29.85px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(17, 51, 17);"></span></div></div></div></body></html>
